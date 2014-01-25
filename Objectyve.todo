@@ -1,0 +1,32 @@
+
+Objectÿve :
+First core bêta version dated May 2012
+Second core bêta version dated 2014-01-07
+
+@related :
+http://www.addyosmani.com/resources/essentialjsdesignpatterns/book/
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object
+
+General :
+  ☐ Check whole comments
+  ☐ Add '@param' and '@return' descriptions
+  ☐ Make a full diagram
+  ✔ Github repository @done (14-01-25 18:57)
+  ☐ Website
+
+Core :
+  ✔ Start a new core @done (14-01-08 21:39)
+
+Constructor :
+  ✔ Check public/protected/private members while redefined (reset or throw exception). @done (14-01-24 23:37)
+
+Prototype :
+  ✔ Hidden (protected) members @done (14-01-28 23:11)
+
+Instances :
+  ✔ Hidden (private) members @done (14-01-18 22:33)
+  ✔ Nested members @done (14-01-21 23:37)
+
+Plugins :
+  ✔ Integrate Require.js @done (14-01-17 22:24)
+  ☐ Integrate Backbone.js

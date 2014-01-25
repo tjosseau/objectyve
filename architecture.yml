@@ -1,0 +1,45 @@
+
+#### mkprj Project Generator ####
+
+# 0             skip
+# false         delete
+# 1 true        file
+# 2 *empty*     folder
+# > ...         file with inline content
+# | ...         file with block content
+# @name         copy module
+# ~name         copy from bower components
+
+#### Objectyve framework architecture ####
+
+# Dependencies #
+    # Frontend package manager
+bower.json: 0
+bower_components: 0
+    # Server package manager
+package.json: 0
+node_modules: 0
+    # Installation
+!install.sh: |
+    #### Shell script as installation notice ####
+    bower install -save qunit
+    bower install -save requirejs
+
+# Documentations #
+readme.md: @README.md
+Objectyve.todo: @blank.todo
+
+# Sources #
+core:
+    Objectyve.js: 1
+
+# Test files #
+test:
+    index.html: @index.html     # Client side
+    index.js: @index.js         # Server side
+    ideas.js: 1
+    dir1:
+        A.js: 1
+        B.js: 1
+    dir2:
+        C.js: 1

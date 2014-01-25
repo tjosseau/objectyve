@@ -1,0 +1,22 @@
+{
+  "name": "Objectyve",
+  "main": "index.js",
+  "version": "0.3.1",
+  "authors": [
+    "tjosseau <thomas.josseau.acc@gmail.com>"
+  ],
+  "description": "Objectÿve is a light JavaScript framework to simplify your prototypes definition.",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "requirejs": "~2.1.10",
+    "qunit": "~1.13.0"
+  }
+}
