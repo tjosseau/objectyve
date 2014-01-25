@@ -3,24 +3,26 @@
 
 Objectÿve is a light JavaScript framework to simplify your prototypes definition.
 
-* **JS 1.8** : Compatible with client-side JavaScript 1.8 and higher (I.E. >= 9).
+* **JS 1.8** : Compatible with client-side JavaScript 1.8 and higher `I.E. >= 9`
 
-* **AMD** : AMD compatibility (RequireJS)
+* **AMD** : AMD compatibility `RequireJS`
 
-* **Node** : Server-side compatibility (Node.js)
+* **Node** : Server-side compatibility `Node.js`
 
 ## First step
 
 After having loaded the `Objectyve.js` script you are able to use it this way :
 
-```var Living = new Objectyve.Prototype() ;
+```javascript
+var Living = new Objectyve.Prototype() ;
 
 new Living() ;
 ```
 
 Then you may want to add some attributes and methods to it :
 
-```Living.public({
+```javascript
+Living.public({
     name : '',
     age : 0,
 
@@ -29,7 +31,7 @@ Then you may want to add some attributes and methods to it :
     }
 }) ;
 
-// This code will produce the same as :
+// This code is a simpler version of :
 Living = function() {
     this.name = "" :
     this.age = 0 ;
@@ -43,15 +45,18 @@ Living.prototype = {
 
 ## Usage and details
 
-* Building constructor and prototype
+* **Building constructor and prototype**
 
-    ```var Machin = new Objectyve.Prototype() ;
+    ```javascript
+    var Machin = new Objectyve.Prototype() ;
     ```
-* Public members
 
     The `Machin` variable is now a constructor, having an empty prototype.
 
-    ```Machin.public({
+* **Public members**
+
+    ```javascript
+    Machin.public({
         a : 1,
         b : 2,
 
@@ -61,20 +66,23 @@ Living.prototype = {
     }) ;
     ```
 
-    The same constructor will now set `a` and `b` for the next instances, and `test` has been added to the prototype.
+    The constructor will now set `a` and `b` for the next instances, and `test` has been added to the prototype.
     You are then able to add other attributes anytime you want :
 
-    ```Machin.public({
+    ```javascript
+    Machin.public({
         c : 3
     }) ;
 
     console.log(new Machin()) ; // { a:1, b:2, c:3 }
     ```
 
-* Prototype attributes
+* **Prototype attributes**
 
-    You are able to set attributes to the prototype and not the instance :
-    ```Machin.prototype({
+    You are able to set attributes to the prototype directly and not the instance :
+
+    ```javascript
+    Machin.prototype({
         d : 4
     }) ;
 
@@ -83,11 +91,12 @@ Living.prototype = {
     console.log(m.d) ; // 4
     ```
 
-* Note : Public vs Prototype
+* **Note : Public vs Prototype**
 
     The `.public({})` function set the non-function properties to the instance, whereas `.prototype({})` function set all the properties to the prototype. This means every instance will share the same properties defined in their prototype.
 
-    ```A.public({ pu : true }).prototype({ pr : true }) ;
+    ```javascript
+    A.public({ pu : true }).prototype({ pr : true }) ;
     var a = new A() ;
     console.log(a) ; // { pu:true }
     console.log(a.pr) ; // true
@@ -108,14 +117,16 @@ Living.prototype = {
     console.log(a2) // { pu:true }
     ```
 
-    That is why all methods have to be set in the prototype to be shared with all instances and not duplicated. However, attributes should be set in the constructor to be independant or in the prototype to be shared.
+    That is why all methods have to be set in the prototype to be shared with all instances and not duplicated. However, attributes should be set in the constructor to be independant or in the prototype to refer a shared property.
 
-* Privacy
+* **Privacy**
 
-    JavaScript permits objects to have hidden fields. Objectyve allows users to define both "private" and "protected" members, however it is not like in a classic Object Oriented behavior.
+    JavaScript permits objects to have hidden fields. Objectyve allows users to define both "private" and "protected" members, however _it is **not** like in a classic Object Oriented behavior_.
 
     - **Protected** are public accessible but not enumerable from the instance :
-    ```Machin.public({
+
+    ```javascript
+    Machin.public({
         a : 1
     }).protected({
         _a : 10
@@ -124,7 +135,7 @@ Living.prototype = {
     var m = new Machin() ;
     console.log(m) ; // { a:1 }
     console.log(m._a) ; // 10
-    console.log(m.prototype) ; // { _a:10 }
+    console.log(m.prototype) ; // { a:1, _a:10 }
 
     var props = [] ;
     for (var p in m) props.push(p) ;
@@ -132,7 +143,9 @@ Living.prototype = {
     ```
 
     - **Private** are public accessible but not enumerable from the instance neither from the prototype :
-    ```Machin.public({
+
+    ```javascript
+    Machin.public({
         a : 1
     }).protected({
         _a : 10
@@ -143,22 +156,23 @@ Living.prototype = {
     var m = new Machin() ;
     console.log(m) ; // { a:1 }
     console.log(m.__a) ; // 100
-    console.log(m.prototype) ; // { _a:10 }
+    console.log(m.prototype) ; // { a:1, _a:10 }
 
     var props = [] ;
     for (var p in m) props.push(p) ;
     console.log(props) ; // ["a"]
 
     props = [] ;
-    for (var p in m.prototype) props.push(p) ;
-    console.log(props) ; // ["_a"]
+    for (p in m.prototype) props.push(p) ;
+    console.log(props) ; // ["a", "_a"]
     ```
 
-* Static members
+* **Static members**
 
     Static members are properties defined directly on the constructor :
 
-    ```Machin.static({
+    ```javascript
+    Machin.static({
         m : 0,
         n : 1,
 
@@ -171,22 +185,25 @@ Living.prototype = {
     console.log(Machin.mn()) ; // 1
     ```
 
-* Inheritance and mixins
+* **Inheritance and mixins**
 
     - **Extend** :
-    Prototypes can inherit from one other :
+    Prototypes can inherit from one other prototype :
 
-    ```var Chose = new Objectyve.Prototype()
+    ```javascript
+    var Chose = new Objectyve.Prototype()
     .extend(Machin) ;
 
     var c = new Chose() ;
     console.log(c instanceof Machin) ; // true
     console.log(c.a) ; // 1
+    ```
 
     - **Mixin** :
-    Prototypes can mix in multiple others :
+    Prototypes can mix in multiple prototypes or objects :
 
-    ```var Chose = new Objectyve.Prototype()
+    ```javascript
+    var Chose = new Objectyve.Prototype()
     .mixin(Machin, { aa : 2 }) ;
 
     var c = new Chose() ;
@@ -198,4 +215,5 @@ Living.prototype = {
 ## Note
 
 Readme WIP
+
 Further documentation coming soon !
