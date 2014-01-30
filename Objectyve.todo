@@ -18,7 +18,7 @@ Core :
   ✔ Start a new core @done (14-01-08 21:39)
 
 Constructor :
-  ✔ Check public/protected/private members while redefined (reset or throw exception). @done (14-01-24 23:37)
+  ✔ Check public/hidden/concealed members while redefined (reset or throw exception). @done (14-01-24 23:37)
 
 Prototype :
   ✔ Hidden (protected) members @done (14-01-28 23:11)

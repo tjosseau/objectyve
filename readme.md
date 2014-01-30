@@ -89,6 +89,7 @@ Living.prototype = {
     var m = new Machin() ;
     console.log(m) ; // { a:1, b:2, c:3 }
     console.log(m.d) ; // 4
+    console.log(m.prototype.d) ; // 4
     ```
 
 * **Note : Public vs Prototype**
@@ -121,14 +122,14 @@ Living.prototype = {
 
 * **Privacy**
 
-    JavaScript permits objects to have hidden fields. Objectyve allows users to define both "private" and "protected" members, however _it is **not** like in a classic Object Oriented behavior_.
+    JavaScript permits objects to have hidden fields. Objectyve allows users to define both "hidden" and "concealed" members which means not allowing to enumerate the given properties.
 
-    - **Protected** are public accessible but not enumerable from the instance :
+    - **Hidden** are public accessible but not enumerable from the instance :
 
     ```javascript
     Machin.public({
         a : 1
-    }).protected({
+    }).hidden({
         _a : 10
     }) ;
     
@@ -142,14 +143,14 @@ Living.prototype = {
     console.log(props) ; // ["a"]
     ```
 
-    - **Private** are public accessible but not enumerable from the instance neither from the prototype :
+    - **Concealed** are public accessible but not enumerable from the instance neither from the prototype :
 
     ```javascript
     Machin.public({
         a : 1
-    }).protected({
+    }).hidden({
         _a : 10
-    }).private({
+    }).concealed({
         __a : 100
     }) ;
     
@@ -214,6 +215,5 @@ Living.prototype = {
 
 ## Note
 
-Readme WIP
-
+Readme in progress.
 Further documentation coming soon !

@@ -23,7 +23,7 @@
         case 'server' : global = GLOBAL ;       break ;     // Server side JavaScript (with Node.js)
         default :       global = {} ;           break ;     // Unknown context
     }
-    // Stores the possibly already defined framework. Use `Objectyve.noConflict()` to get a private instance.
+    // Stores the possibly already defined framework. Use `Objectyve.noConflict()` to get a concealed instance.
     __Objectyve = global.Objectyve ;
 
 //---------------------------------------------------------------------------------------------------------------------------//
@@ -184,26 +184,22 @@
 
         defineMember = function(constructor, member, visibility)
         {
-            if (constructor.__meta__.options.strict >= Objectyve.strict.HIGH && (
-                    constructor.__meta__.public[member] ||
-                    constructor.__meta__.protected[member] ||
-                    constructor.__meta__.private[member]
-                ))
-                throw "Member named '"+member+"' is already defined." ;
+            var meta = constructor.__meta__ ;
+            for (var v in meta.skeleton)
+                if (meta.skeleton[v][member]) {
+                    if (meta.options.strict >= Objectyve.strict.HIGH)
+                        throw "Member named '"+member+"' is already defined." ;
+                    else defineProperty(constructor.prototype, member, {
+                        writable : true,
+                        enumerable : true,
+                        configurable : true
+                    }) ;
+                    delete meta.skeleton[v][member] ;
+                    break ;
+                }
 
-            if (constructor.__meta__.protected[member] || constructor.__meta__.private[member]) {
-                defineProperty(constructor.prototype, member, {
-                    enumerable : true,
-                    configurable : true
-                }) ;
-            }
-
-            delete constructor.__meta__.public[member] ;
-            delete constructor.__meta__.protected[member] ;
-            delete constructor.__meta__.private[member] ;
-
-            constructor.__meta__[visibility][member] = true ;
-            if (visibility === 'private')
+            meta.skeleton[visibility][member] = true ;
+            if (visibility === 'concealed')
                 defineProperty(constructor.prototype, member, {
                     enumerable : false,
                     configurable : true
@@ -344,9 +340,9 @@
             extend : function(constructor)
             {
                 this.prototype = Object.create(constructor.prototype) ;
-                if (constructor.__meta__) {
-                    copy(this.__meta__.public, constructor.__meta__.public) ;
-                    copy(this.__meta__.protected, constructor.__meta__.protected) ;
+                if (constructor.__meta__ && constructor.__meta__.skeleton) {
+                    copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
+                    copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                 }
                 this.parent = constructor ;
 
@@ -367,9 +363,9 @@
                         copy(this.prototype, constructor) ;
                     else throw "Cannot mixin '"+constructor+"' with a prototype." ;
 
-                    if (constructor.__meta__) {
-                        copy(this.__meta__.public, constructor.__meta__.public) ;
-                        copy(this.__meta__.protected, constructor.__meta__.protected) ;
+                    if (constructor.__meta__ && constructor.__meta__.skeleton) {
+                        copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
+                        copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                     }
                 }
 
@@ -378,30 +374,30 @@
 
             public : function(properties)
             {
+                copy(this.prototype, properties) ;
+
                 for (var p in properties)
                     defineMember(this, p, 'public') ;
 
+                return this ;
+            },
+
+            hidden : function(properties)
+            {
                 copy(this.prototype, properties) ;
+
+                for (var p in properties)
+                    defineMember(this, p, 'hidden') ;
 
                 return this ;
             },
 
-            protected : function(properties)
+            concealed : function(properties)
             {
-                for (var p in properties)
-                    defineMember(this, p, 'protected') ;
-
                 copy(this.prototype, properties) ;
 
-                return this ;
-            },
-
-            private : function(properties)
-            {
                 for (var p in properties)
-                    defineMember(this, p, 'private') ;
-
-                copy(this.prototype, properties) ;
+                    defineMember(this, p, 'concealed') ;
 
                 return this ;
             },
@@ -423,7 +419,7 @@
             nest : function(nested)
             {
                 for (var c in nested)
-                    this.__meta__.nested[c] = clone(nested[c]) ;
+                    this.__meta__.skeleton.nested[c] = clone(nested[c]) ;
 
                 return this ;
             },
@@ -459,7 +455,7 @@
 
         Instance : {
             perform : {
-                ORDER : ['class', 'nested'],
+                ORDER : ['prototype', 'nested'],
                 add : function(name, fn, position) {
                     if (name === 'ORDER' || name === 'add')
                         throw "Constructor perform function name '"+name+"' is reserved." ;
@@ -490,18 +486,18 @@
 
                 //////////////////////////////////////////////////////////////
 
-                class : function(constructor) {
+                prototype : function(constructor) {
                     var property ;
 
                     for (var p in constructor.prototype) {
                         property = constructor.prototype[p] ;
                         if (is.funct(property)) continue ;
 
-                        if (constructor.__meta__.public[p]) {
+                        if (constructor.__meta__.skeleton.public[p]) {
                             if (is.object(property)) this[p] = clone(property) ;
                             else this[p] = property ;
                         }
-                        else if (constructor.__meta__.protected[p]) {
+                        else if (constructor.__meta__.skeleton.hidden[p]) {
                             if (is.object(property)) this[p] = clone(property) ;
                             else this[p] = property ;
                             defineProperty(this, p, {
@@ -511,7 +507,7 @@
                         }
                     }
 
-                    for (var pp in constructor.__meta__.private) {
+                    for (var pp in constructor.__meta__.skeleton.concealed) {
                         property = constructor.prototype[pp] ;
                         if (is.funct(property)) continue ;
 
@@ -525,11 +521,16 @@
                 },
 
                 nested : function(constructor) {
-                    for (var cl in constructor.__meta__.nested) {
+                    var property ;
+                    for (var cl in constructor.__meta__.skeleton.nested) {
                         if (!is.object(this[cl])) this[cl] = {} ;
-                        for (var clp in constructor.__meta__.nested[cl])
-                            if (is.funct(constructor.__meta__.nested[cl][clp]))
-                                this[cl][clp] = applyFn(this, constructor.__meta__.nested[cl][clp]) ;
+                        for (var clp in constructor.__meta__.skeleton.nested[cl]) {
+                            property = constructor.__meta__.skeleton.nested[cl][clp] ;
+
+                            if (is.funct(property)) this[cl][clp] = applyFn(this, property) ;
+                            else if (is.object(property)) this[cl][clp] = clone(property) ;
+                            else this[cl][clp] = property ;
+                        }
                     }
                 }
             },
@@ -552,10 +553,12 @@
             constructor.__meta__ = {
                 definition : {},
 
-                public : {},
-                protected : {},
-                private : {},
-                nested : {},
+                skeleton : {
+                    public : {},
+                    hidden : {},
+                    concealed : {},
+                    nested : {},
+                },
 
                 options : clone(options),
                 plugins : clone(plugins)
