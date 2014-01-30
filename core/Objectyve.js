@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.3.1
- * @date        2014.01.25
+ * @version     0.3.3
+ * @date        2014.01.31
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -34,11 +34,11 @@
     var VERSION = [
             0,                      // Version of framework's Core
             3,                      // Updates - Modifications
-            1,                      // Minor updates - Corrections
+            3,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 1               -1, // Month >---- of last update
-                25                  // Day  /
+                31                  // Day  /
             )
         ],
 
@@ -269,6 +269,14 @@
         configure : function(opts)
         {
             configure.call(options, opts) ;
+
+            return this ;
+        },
+
+        plug : function(plugs)
+        {
+            copy(plugins, plugs) ;
+
             return this ;
         },
         
@@ -446,7 +454,7 @@
                     }.bind(this)) ;
                 else if (jsCore === 'server')
                     module.exports = this ;
-                else if (this.__meta__.options.debug >= Objectyve.debug.MEDIUM)
+                else if (this.__meta__.options.debug >= Objectyve.debug.MINIMAL)
                     warn("Constructor definition function 'define()' called without effect.") ;
 
                 return this ;
