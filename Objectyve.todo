@@ -19,6 +19,7 @@ Core :
 
 Constructor :
   ✔ Check public/hidden/concealed members while redefined (reset or throw exception). @done (14-01-24 23:37)
+  ✔ Add define function with asynchronous callback @done (14-02-03 17:17)
 
 Prototype :
   ✔ Hidden (protected) members @done (14-01-28 23:11)

@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.3.3
- * @date        2014.01.31
+ * @version     0.3.4
+ * @date        2014.02.03
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -34,11 +34,11 @@
     var VERSION = [
             0,                      // Version of framework's Core
             3,                      // Updates - Modifications
-            3,                      // Minor updates - Corrections
+            4,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
-                1               -1, // Month >---- of last update
-                31                  // Day  /
+                2               -1, // Month >---- of last update
+                3                   // Day  /
             )
         ],
 
@@ -99,7 +99,7 @@
             // @return <any> : If only one argument, first value given ; else all the arguments.
         echo = function()
         {
-            if (!options.silent && console) console.log.apply(null, arguments) ;
+            if (!options.silent && console) console.log.apply(console, arguments) ;
             return arguments.length === 1 ? arguments[0] : arguments ;
         },
 
@@ -333,14 +333,16 @@
                     size = tree.length,
                     root = global ;
 
-                tree.forEach(function(word, i) {
+                for (var word, w=0, wl=size ; w<wl ; w++) {
+                    word = tree[w] ;
+
                     if (root[word] == null) root[word] = {} ;
-                    else if (!is.object(root[word]) && this.__meta__.options.strict >= Objectyve.strict.LOW)
+                    else if (!is.object(root[word]) && !is.funct(root[word]) && this.__meta__.options.strict >= Objectyve.strict.LOW)
                         throw "Unvalid module root '"+root[word]+"' for '"+fullname+"'." ;
 
-                    if (i < size-1) root = root[word] ;
+                    if (w < size-1) root = root[word] ;
                     else root[word] = this ;
-                }.bind(this)) ;
+                }
 
                 return this ;
             },
@@ -380,7 +382,7 @@
                 return this ;
             },
 
-            public : function(properties)
+            'public' : function(properties)
             {
                 copy(this.prototype, properties) ;
 
@@ -446,16 +448,24 @@
                 return this ;
             },
 
-            define : function()
+            define : function(deps, callback)
             {
                 if (this.__meta__.plugins.requirejs)
-                    global.define(function() {
+                    global.define(deps || [], function() {
+                        if (is.funct(callback)) callback.apply(this, arguments) ;
                         return this ;
                     }.bind(this)) ;
-                else if (jsCore === 'server')
+                else if (jsCore === 'server') {
+                    var instances = [] ;
+                    if (deps) for (var d=0, dl=deps.length ; d<dl ; d++)
+                        instances.push(require(deps[d])) ;
+                    if (is.funct(callback)) callback.apply(this, instances) ;
                     module.exports = this ;
-                else if (this.__meta__.options.debug >= Objectyve.debug.MINIMAL)
+                }
+                else if (this.__meta__.options.debug >= Objectyve.debug.MINIMAL) {
                     warn("Constructor definition function 'define()' called without effect.") ;
+                    if (is.funct(callback)) callback.apply(this, instances) ;
+                }
 
                 return this ;
             }
@@ -562,10 +572,10 @@
                 definition : {},
 
                 skeleton : {
-                    public : {},
+                    'public' : {},
                     hidden : {},
                     concealed : {},
-                    nested : {},
+                    nested : {}
                 },
 
                 options : clone(options),

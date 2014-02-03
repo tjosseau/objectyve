@@ -30,17 +30,47 @@ Living.public({
         return 'rawr' ;
     }
 }) ;
+Living.prototype({
+    randomValue : Math.random()
+}) ;
+Living.static({
+    description : "Something alive."
+}) ;
 
 // This code is a simpler version of :
+
 Living = function() {
     this.name = "" :
     this.age = 0 ;
+    // No function setting here, directly on the prototype.
 } ;
 Living.prototype = {
+    randomValue : Math.random(),
     speak : function() {
         return 'rawr' ;
     }
 } ;
+Living.description = "Something alive." ;
+```
+
+You can also chain functions as promises to build your Prototype :
+
+```javascript
+var Living = new Objectyve.Prototype()
+.static({
+    description : "Something alive."
+})
+.prototype({
+    randomValue : Math.random()
+})
+.public({
+    name : '',
+    age : 0,
+
+    speak : function() {
+        return 'rawr' ;
+    }
+}) ;
 ```
 
 ## Usage and details

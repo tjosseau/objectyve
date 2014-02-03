@@ -32,6 +32,7 @@ Objectyve.todo: @blank.todo
 # Sources #
 core:
     Objectyve.js: 1
+    Objectyve.min.js: 1
 
 # Test files #
 test:
