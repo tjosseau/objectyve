@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.3.4
- * @date        2014.02.03
+ * @version     0.4.0
+ * @date        2014.02.16
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -33,12 +33,12 @@
         // Version of Objectyve - accessible with `Objectyve.version()`
     var VERSION = [
             0,                      // Version of framework's Core
-            3,                      // Updates - Modifications
-            4,                      // Minor updates - Corrections
+            4,                      // Updates - Modifications
+            0,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 2               -1, // Month >---- of last update
-                3                   // Day  /
+                16                  // Day  /
             )
         ],
 
@@ -189,21 +189,16 @@
                 if (meta.skeleton[v][member]) {
                     if (meta.options.strict >= Objectyve.strict.HIGH)
                         throw "Member named '"+member+"' is already defined." ;
-                    else defineProperty(constructor.prototype, member, {
-                        writable : true,
-                        enumerable : true,
-                        configurable : true
-                    }) ;
-                    delete meta.skeleton[v][member] ;
+                    else delete meta.skeleton[v][member] ;
                     break ;
                 }
 
             meta.skeleton[visibility][member] = true ;
-            if (visibility === 'concealed')
-                defineProperty(constructor.prototype, member, {
-                    enumerable : false,
-                    configurable : true
-                }) ;
+            defineProperty(constructor.prototype, member, {
+                writable : true,
+                enumerable : visibility !== 'concealed',
+                configurable : true
+            }) ;
         },
 
         configure = function(opts)
@@ -292,12 +287,9 @@
 
         util : {
             is : is,
-            // has : has,
-            // meta : meta,
             clone : clone,
             copy : copy,
             list : list,
-            defineProperty : defineProperty,
             filter : filter
         },
 
@@ -450,15 +442,18 @@
 
             define : function(deps, callback)
             {
-                if (this.__meta__.plugins.requirejs)
+                if (this.__meta__.plugins.requirejs) {
+                    var _this = this ;
                     global.define(deps || [], function() {
-                        if (is.funct(callback)) callback.apply(this, arguments) ;
-                        return this ;
-                    }.bind(this)) ;
+                        if (is.funct(callback)) callback.apply(_this, arguments) ;
+                        return _this ;
+                    }) ;
+                }
                 else if (jsCore === 'server') {
                     var instances = [] ;
-                    if (deps) for (var d=0, dl=deps.length ; d<dl ; d++)
-                        instances.push(require(deps[d])) ;
+                    if (deps)
+                        for (var d=0, dl=deps.length ; d<dl ; d++)
+                            instances.push(require(deps[d])) ;
                     if (is.funct(callback)) callback.apply(this, instances) ;
                     module.exports = this ;
                 }
@@ -581,8 +576,12 @@
                 options : clone(options),
                 plugins : clone(plugins)
             } ;
-            copy(constructor, Objectyve.Constructor) ;
-
+            
+            if (is.funct(Object.setPrototypeOf))
+                Object.setPrototypeOf(constructor, Objectyve.Constructor) ;
+            else
+                constructor.__proto__ = Objectyve.Constructor ;
+            
             return constructor ;
         }
     } ;

@@ -20,12 +20,13 @@ Core :
 Constructor :
   ✔ Check public/hidden/concealed members while redefined (reset or throw exception). @done (14-01-24 23:37)
   ✔ Add define function with asynchronous callback @done (14-02-03 17:17)
+  ✔ Set constructor's own prototype (constructor.__proto__) @done (14-02-16 22:17)
 
 Prototype :
-  ✔ Hidden (protected) members @done (14-01-28 23:11)
+  ✔ Concealed members @done (14-01-28 23:11)
 
 Instances :
-  ✔ Hidden (private) members @done (14-01-18 22:33)
+  ✔ Hidden members @done (14-01-18 22:33)
   ✔ Nested members @done (14-01-21 23:37)
 
 Plugins :
