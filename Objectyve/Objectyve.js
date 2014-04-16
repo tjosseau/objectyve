@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.4.0
- * @date        2014.02.16
+ * @version     0.4.2
+ * @date        2014.04.16
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -12,17 +12,22 @@
  *      (Second core bêta version)
  */
 
-(function(jsCore) {
-    // "use strict" ; // Strict mode - Disabled in production
+void function(jsCore) {
+    "use strict" ; // Strict mode - Disabled in production
 
     // Defines the global container and local reference to the framework.
-    var global, Objectyve, __Objectyve ;
+    var global, ECMAScript, Objectyve, __Objectyve ;
     // Argument 'jsCore' as type of JavaScript core between a client (browser) and a server (here Node.js).
     switch (jsCore) {
         case 'client' : global = window ;       break ;     // Client side JavaScript
         case 'server' : global = GLOBAL ;       break ;     // Server side JavaScript (with Node.js)
         default :       global = {} ;           break ;     // Unknown context
     }
+
+    if (typeof Object.setPrototypeOf === 'function') ECMAScript = 6 ;
+    else if (typeof (function () {}).__proto__ === 'function') ECMAScript = 5 ;
+    else ECMAScript = 4 ;
+
     // Stores the possibly already defined framework. Use `Objectyve.noConflict()` to get a concealed instance.
     __Objectyve = global.Objectyve ;
 
@@ -34,10 +39,10 @@
     var VERSION = [
             0,                      // Version of framework's Core
             4,                      // Updates - Modifications
-            0,                      // Minor updates - Corrections
+            2,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
-                2               -1, // Month >---- of last update
+                4               -1, // Month >---- of last update
                 16                  // Day  /
             )
         ],
@@ -81,6 +86,11 @@
                 global.define(Objectyve) ;
             
             global.Objectyve = Objectyve ;
+
+        // Setting old browsers compatibility //
+            if (ECMAScript < 5) {
+                copy(Function.prototype, Objectyve.Constructor) ;
+            }
         },
 
     // Utilities //
@@ -99,8 +109,11 @@
             // @return <any> : If only one argument, first value given ; else all the arguments.
         echo = function()
         {
-            if (!options.silent && console) console.log.apply(console, arguments) ;
-            return arguments.length === 1 ? arguments[0] : arguments ;
+            if (!options.silent && console) {
+                if (ECMAScript > 4) console.log.apply(console, arguments) ;
+                else console.log(arguments[0]) ;
+            }
+            return arguments[0] ;
         },
 
         // Displays a warning message in the browser info.
@@ -187,7 +200,7 @@
             var meta = constructor.__meta__ ;
             for (var v in meta.skeleton)
                 if (meta.skeleton[v][member]) {
-                    if (meta.options.strict >= Objectyve.strict.HIGH)
+                    if (member !== 'constructor' && meta.options.strict >= Objectyve.strict.HIGH)
                         throw "Member named '"+member+"' is already defined." ;
                     else delete meta.skeleton[v][member] ;
                     break ;
@@ -227,6 +240,8 @@
     Objectyve = {
 
     // Variables //
+        ECMAScript : ECMAScript,
+
         debug : {
             SILENT : 0,
             MINIMAL : 1,
@@ -294,10 +309,16 @@
         },
 
         echo : echo,
-
         warn : warn,
 
     // Engines //
+
+        Skeleton : {
+            'public' : {},
+            hidden : {},
+            concealed : {},
+            nested : {}
+        },
         
         Constructor : {
         // Getters //
@@ -553,9 +574,11 @@
                 var performs = Objectyve.Instance.perform ;
                 for (var p=0, pl=performs.ORDER.length ; p<pl ; p++)
                     performs[performs.ORDER[p]].call(this, constructor) ;
-                
-                if (Object.prototype.hasOwnProperty.call(this, 'constructor') && is.funct(this.constructor))
-                    return this.constructor.apply(this, args) ;
+
+                if (constructor.__meta__.skeleton.public.constructor === true)
+                    return this._constructor.apply(this, args) ;
+
+                return this ;
             }
         },
         
@@ -565,22 +588,28 @@
             } ;
             constructor.__meta__ = {
                 definition : {},
-
-                skeleton : {
-                    'public' : {},
-                    hidden : {},
-                    concealed : {},
-                    nested : {}
-                },
-
+                skeleton : clone(Objectyve.Skeleton),
                 options : clone(options),
                 plugins : clone(plugins)
             } ;
-            
-            if (is.funct(Object.setPrototypeOf))
-                Object.setPrototypeOf(constructor, Objectyve.Constructor) ;
-            else
-                constructor.__proto__ = Objectyve.Constructor ;
+
+            switch (ECMAScript) {
+                case 6 :
+                    Object.setPrototypeOf(constructor, Objectyve.Constructor) ;
+                case 5 :
+                    constructor.__proto__ = Objectyve.Constructor ;
+            }
+
+            // Avoids modifying real constructor.
+            Object.defineProperty(constructor.prototype, 'constructor', {
+                get : function() {
+                    return constructor ;
+                },
+                set : function(fn) {
+                    constructor.prototype._constructor = fn ;
+                },
+                configurable : true
+            }) ;
             
             return constructor ;
         }
@@ -588,7 +617,7 @@
 
     // Runs the now ready framework.
     boot() ;
-})(
+}(
     typeof window !== 'undefined' && window.document ? 'client'         // Web browser compatibility
   : typeof module !== 'undefined' && module.exports ? 'server'          // Node.js Server compatibility
   : 'undefined'                                                         // Undefined context
