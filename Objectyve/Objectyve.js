@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.4.3
- * @date        2014.04.20
+ * @version     0.5.5
+ * @date        2014.06.02
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -14,22 +14,26 @@
 
 void function(jsCore) {
     // "use strict" ; // Strict mode - Disabled in production
+    
+//---------------------------------------------------------------------------------------------------------------------------//
+//      Compatibility checking
+//---------------------------------------------------------------------------------------------------------------------------//
 
     // Defines the global container and local reference to the framework.
-    var global, ECMAScript, Objectyve, __Objectyve ;
+    var root, ECMAScript, Objectyve, __Objectyve ;
     // Argument 'jsCore' as type of JavaScript core between a client (browser) and a server (here Node.js).
     switch (jsCore) {
-        case 'client' : global = window ;       break ;     // Client side JavaScript
-        case 'server' : global = GLOBAL ;       break ;     // Server side JavaScript (with Node.js)
-        default :       global = {} ;           break ;     // Unknown context
+        case 'client' : root = window ;       break ;     // Client side JavaScript
+        case 'server' : root = GLOBAL ;       break ;     // Server side JavaScript (with Node.js)
+        default :       root = {} ;           break ;     // Unknown context
     }
 
     if (typeof Object.setPrototypeOf === 'function') ECMAScript = 6 ;
-    else if (typeof (function () {}).__proto__ === 'function') ECMAScript = 5 ;
+    else if (typeof (function() {}).__proto__ === 'function') ECMAScript = 5 ;
     else ECMAScript = 4 ;
 
     // Stores the possibly already defined framework. Use `Objectyve.noConflict()` to get a concealed instance.
-    __Objectyve = global.Objectyve ;
+    __Objectyve = root.Objectyve ;
 
 //---------------------------------------------------------------------------------------------------------------------------//
 //      Constants
@@ -38,18 +42,18 @@ void function(jsCore) {
         // Version of Objectyve - accessible with `Objectyve.version()`
     var VERSION = [
             0,                      // Version of framework's Core
-            4,                      // Updates - Modifications
-            3,                      // Minor updates - Corrections
+            5,                      // Updates - Modifications
+            5,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
-                4               -1, // Month >---- of last update
-                20                  // Day  /
+                6               -1, // Month >---- of last update
+                2                   // Day  /
             )
         ],
 
         options = {
             silent : false,
-            strict : 0, 
+            strict : 0,
             debug : 0
         },
 
@@ -58,23 +62,23 @@ void function(jsCore) {
         },
 
         reserved = {
-            constructor : '_constructor'
+            constructor : 'initialize'
         },
 
-        boot = function() {
+        init = function() {
         // Preparing framework //
 
             Objectyve.options.strict = Objectyve.strict.LOW ;
 
             var to0n = function(num) { return num < 10 ? '0'+num : ''+num ; } ;
-            // Generating a comprehensive version accessor of ObjecScrypt.
+            // Generating a comprehensive version accessor of Objectÿve.
             Objectyve.version.core = VERSION[0] ;
             Objectyve.version.update = VERSION[1] ;
             Objectyve.version.correction = VERSION[2] ;
             // Build version of framework (i.e. 102034 means 1.2.34).
             Objectyve.version.build = 100000 * VERSION[0] + 1000 * VERSION[1] + VERSION[2] ;
             Objectyve.version.date = VERSION[3].getTime() ;
-            // Adds a toString version of Objectyve version.
+            // Adds a toString version of Objectÿve version.
             Objectyve.version.toString = function() {
                 return 'Objectÿve version '
                     + Objectyve.version.core + '.'
@@ -86,16 +90,11 @@ void function(jsCore) {
             } ;
 
         // Exporting //
-            // Exports Objectyve as a module for Node.js.
-            if (jsCore === 'server') module.exports = Objectyve ;
-            // AMD compatibility, defines Objectyve as a require-able module.
-            else if (typeof global.define === 'function') global.define(Objectyve) ;
-            else global.Objectyve = Objectyve ;
-
-        // Setting old browsers compatibility //
-            if (ECMAScript < 5) {
-                copy(Function.prototype, Objectyve.Constructor) ;
-            }
+            // AMD compatibility, defines Objectÿve as a require-able module.
+            if (typeof root.define === 'function') root.define(Objectyve) ;
+            // Exports Objectÿve as a module for Node.js.
+            else if (jsCore === 'server') module.exports = Objectyve ;
+            else root.Objectyve = Objectyve ;
         },
 
     // Utilities //
@@ -104,7 +103,14 @@ void function(jsCore) {
             // @param object <object> : Object to define a special property
             // @param property <string> : Name of property to alter
             // @param options <object> : Set of property options
-        defineProperty = Object.defineProperty,
+        defineProperty = ECMAScript > 4 ?
+            Object.defineProperty :
+            function() {
+                try { return Object.defineProperty.apply(arguments[0], arguments) ; }
+                catch (e) {
+                    if (Objectyve.options.debug >= Objectyve.debug.MEDIUM) warn(e) ;
+                }
+            },
 
         // Displays a message in the browser log as returning the first given argument.
         // This allows both echoing the value(s) and getting the first back
@@ -128,6 +134,8 @@ void function(jsCore) {
             if (!options.silent && console) console.info('/!\\ '+string) ;
         },
 
+        async = setTimeout,
+
         // Set of type checking
             // @param o <any> : Variable to check type
             // @return <boolean>
@@ -135,30 +143,62 @@ void function(jsCore) {
             object :        function(o) { return o != null && typeof o === 'object' && !is.array(o) ; },
             bool :          function(o) { return typeof o === 'boolean' ; },
             array :         function(o) { return Object.prototype.toString.call(o) === '[object Array]' ; },
-            number :        function(o) { return !isNaN(parseFloat(o)) && isFinite(o) ; },
+            number :        function(o) { return typeof o === 'number' && !isNaN(parseFloat(o)) && isFinite(o) ; },
             string :        function(o) { return typeof o === 'string' ; },
             funct :         function(o) { return typeof o === 'function' ; },
             container :     function(o) { return is.object(o) || is.array(o) ; },
-            empty :         function(o) { for (undefined in o) return false ; return true ; },
-            constructor :   function(o) { return o === 'constructor' ; }
+            empty :         function(o) { for (var p in o) if (o.propertyIsEnumerable(p)) return false ; return true ; },
+            
+            ofType : function(o) {
+                if (typeof o === 'object') {
+                    if (is.object(o)) return 'object' ;
+                    else if (is.array(o)) return 'array' ;
+                    else return 'null' ;
+                }
+                else if (is.number(o)) return 'number' ;
+                else return typeof o ;
+            }
         },
 
         has = {
-            value :          function(v, a) { var i = a.length ; do if (a[i] === v) return true ; while(i--) ; return false ; }
+            value :         function(v, a) { var i = a.length ; do if (a[i] === v) return true ; while(i--) ; return false ; }
         },
+
+        create = ECMAScript > 4 ?
+            Object.create :
+            (function() {
+                var F = function() {} ;
+                return function(o) {
+                    F.prototype = o ;
+                    return new F() ;
+                } ;
+            })(),
 
         // Clones an object for independant object copies.
             // @param object <object> : Object to clone
             // @return <object> : Cloned object
         clone = function(object)
         {
-            var newObject = {} ;
-            for (var p in object) {
-                // Recursive cloning
-                if (is.object(object[p])) newObject[p] = clone(object[p]) ;
-                else newObject[p] = object[p] ;
+            var isPrimitive,
+                cloned ;
+            if (is.object(object)) isPrimitive = !(cloned = {}) ;
+            else if (is.array(object)) isPrimitive = !(cloned = []) ;
+            else {
+                isPrimitive = true ;
+                cloned = object ;
             }
-            return newObject ;
+            
+            if (!isPrimitive) {
+                for (var p in object) {
+                    if (!object.propertyIsEnumerable(p)) continue ;
+
+                    // Recursive cloning
+                    if (is.container(object[p])) cloned[p] = clone(object[p]) ;
+                    else cloned[p] = object[p] ;
+                }
+            }
+            
+            return cloned ;
         },
 
         // Simple copy (by reference if contains objects).
@@ -167,16 +207,22 @@ void function(jsCore) {
             // @return <object> : Copied object
         copy = function(context, object)
         {
-            for (var p in object) context[p] = object[p] ;
+            for (var p in object)
+                if (object.propertyIsEnumerable(p))
+                    context[p] = object[p] ;
+            return context ;
         },
 
         copySafe = function(context, object)
         {
             for (var p in object)
-                if (p in reserved)
-                    context[reserved[p]] = object[p] ;
-                else
-                    context[p] = object[p] ;
+                if (object.propertyIsEnumerable(p)) {
+                    if (p in reserved)
+                        context[reserved[p]] = object[p] ;
+                    else
+                        context[p] = object[p] ;
+                }
+            return context ;
         },
 
         list = function()
@@ -191,45 +237,6 @@ void function(jsCore) {
             return function() {
                 return fn.apply(context, arguments) ;
             } ;
-        },
-
-        // Filters properties by type, also filling the cleaned body that will contain all properties, useful for loops.
-            // @param rawBody <object> : Default body containing all original properties
-            // @param body <object> : Tidy generating body receiving cleaned properties
-            // @param type <string> : Type character/string (see Constant flags) used to filter properties by type
-            // @return <object> : Filtered array
-        filter = function(rawBody, body, type)
-        {
-            var filteredArray = {},
-                subString = '' ;
-            for (var property in rawBody) {
-                if (property.indexOf(type) === 0) {
-                    subString = property.substr(type.length, property.length-1) ;
-                    body[subString] = filteredArray[subString] = rawBody[property] ;
-                    delete rawBody[property] ;
-                }
-            }
-
-            return filteredArray ;
-        },
-
-        defineMember = function(constructor, member, visibility)
-        {
-            var meta = constructor.__meta__ ;
-            for (var v in meta.skeleton)
-                if (meta.skeleton[v][member]) {
-                    if (member !== 'constructor' && meta.options.strict >= Objectyve.strict.HIGH)
-                        throw "Member named '"+member+"' is already defined." ;
-                    else delete meta.skeleton[v][member] ;
-                    break ;
-                }
-
-            meta.skeleton[visibility][member] = true ;
-            defineProperty(constructor.prototype, member, {
-                writable : true,
-                enumerable : visibility !== 'concealed',
-                configurable : true
-            }) ;
         },
 
         configure = function(opts)
@@ -279,11 +286,9 @@ void function(jsCore) {
 
         plugins : plugins,
 
-        // Returns the framework to set in a variable instead of using the global access.
-            // @return <object> : Objectÿve instance
         noConflict : function()
         {
-            global.Objectyve = __Objectyve ;
+            root.Objectyve = __Objectyve ;
             return Objectyve ;
         },
 
@@ -311,7 +316,7 @@ void function(jsCore) {
         globalize : function()
         {
             for (var m=0, ml=arguments.length ; m<ml ; m++)
-                global[arguments[m]] = Objectyve[arguments[m]] ;
+                root[arguments[m]] = Objectyve[arguments[m]] ;
 
             return this ;
         },
@@ -320,10 +325,12 @@ void function(jsCore) {
 
         util : {
             is : is,
+            has : has,
+            create : create,
             clone : clone,
             copy : copy,
-            list : list,
-            filter : filter
+            copySafe : copySafe,
+            list : list
         },
 
         echo : echo,
@@ -332,10 +339,33 @@ void function(jsCore) {
     // Engines //
 
         Skeleton : {
-            'public' : {},
-            hidden : {},
-            concealed : {},
-            nested : {}
+            modifiers : {
+                'public' : {},
+                hidden : {},
+                shared : {},
+                concealed : {},
+                nested : {}
+            },
+
+            set : function(constructor, member, visibility)
+            {
+                constructor.__meta__.skeleton[visibility][member] = true ;
+            },
+
+            unset : function(constructor, member)
+            {
+                var meta = constructor.__meta__ ;
+                for (var v in meta.skeleton) {
+                    if (meta.skeleton[v][member]) {
+                        if (meta.options.strict === Objectyve.strict.HIGH)
+                            throw "Member named '"+member+"' is already defined as "+v+"." ;
+                        else if (meta.options.strict === Objectyve.strict.LOW)
+                            warn("Member named '"+member+"' is already defined as "+v+".") ;
+                        else delete meta.skeleton[v][member] ;
+                        break ;
+                    }
+                }
+            }
         },
         
         Constructor : {
@@ -358,21 +388,32 @@ void function(jsCore) {
 
         // Setters //
 
+            create : function()
+            {
+                var instance = create(this.prototype) ;
+                return Objectyve.Instance.init.call(instance, this, arguments) ;
+            },
+
             module : function(fullname)
             {
+                async(function() {
+                    if (fullname.indexOf('.') !== -1)
+                        warn('Module name "'+fullname+'" contains a dot. Did you mean "'+(fullname.replace(/\./g, '/'))+'" ?') ;
+                }) ;
+
                 var tree = fullname.split('/'),
                     size = tree.length,
-                    root = global ;
+                    _root = root ;
 
                 for (var word, w=0, wl=size ; w<wl ; w++) {
                     word = tree[w] ;
 
-                    if (root[word] == null) root[word] = {} ;
-                    else if (!is.object(root[word]) && !is.funct(root[word]) && this.__meta__.options.strict >= Objectyve.strict.LOW)
-                        throw "Invalid module root '"+root[word]+"' for '"+fullname+"'." ;
+                    if (_root[word] == null) _root[word] = {} ;
+                    /*else if (!is.object(_root[word]) && !is.funct(_root[word]) && this.__meta__.options.strict >= Objectyve.strict.LOW)
+                        throw "Invalid module root '"+_root[word]+"' for '"+fullname+"'." ;*/
 
-                    if (w < size-1) root = root[word] ;
-                    else root[word] = this ;
+                    if (w < size-1) _root = _root[word] ;
+                    else _root[word] = this ;
                 }
 
                 return this ;
@@ -380,12 +421,13 @@ void function(jsCore) {
 
             extend : function(constructor)
             {
-                this.prototype = Object.create(constructor.prototype) ;
+                this.prototype = create(constructor.prototype) ;
                 if (constructor.__meta__ && constructor.__meta__.skeleton) {
                     copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
                     copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                 }
                 this.parent = constructor ;
+                this.prototype['super'] = constructor.prototype._constructor ;
 
                 return this ;
             },
@@ -413,46 +455,88 @@ void function(jsCore) {
                 return this ;
             },
 
+            augment : function()
+            {
+                this.mixin.apply(this, arguments) ;
+
+                return this ;
+            },
+
             'public' : function(properties)
             {
-                copySafe(this.prototype, properties) ;
+                properties = copySafe({}, properties) ;
+                copy(this.prototype, properties) ;
 
-                for (var p in properties)
-                    defineMember(this, p, 'public') ;
+                for (var p in properties) {
+                    Objectyve.Skeleton.unset(this, p) ;
+                    Objectyve.Skeleton.set(this, p, 'public') ;
+                    defineProperty(this.prototype, p, {
+                        writable : true,
+                        enumerable : true,
+                        configurable : true
+                    }) ;
+                }
 
                 return this ;
             },
 
             hidden : function(properties)
             {
-                copySafe(this.prototype, properties) ;
+                properties = copySafe({}, properties) ;
+                copy(this.prototype, properties) ;
 
-                for (var p in properties)
-                    defineMember(this, p, 'hidden') ;
+                for (var p in properties) {
+                    Objectyve.Skeleton.unset(this, p) ;
+                    Objectyve.Skeleton.set(this, p, 'hidden') ;
+                    defineProperty(this.prototype, p, {
+                        writable : true,
+                        enumerable : true,
+                        configurable : true
+                    }) ;
+                }
+
+                return this ;
+            },
+
+            shared : function(properties)
+            {
+                properties = copySafe({}, properties) ;
+                copy(this.prototype, properties) ;
+
+                for (var p in properties) {
+                    Objectyve.Skeleton.unset(this, p) ;
+                    Objectyve.Skeleton.set(this, p, 'shared') ;
+                    defineProperty(this.prototype, p, {
+                        writable : true,
+                        enumerable : true,
+                        configurable : true
+                    }) ;
+                }
 
                 return this ;
             },
 
             concealed : function(properties)
             {
-                copySafe(this.prototype, properties) ;
+                properties = copySafe({}, properties) ;
+                copy(this.prototype, properties) ;
 
-                for (var p in properties)
-                    defineMember(this, p, 'concealed') ;
-
-                return this ;
-            },
-
-            prototype : function(properties)
-            {
-                copySafe(this.prototype, properties) ;
+                for (var p in properties) {
+                    Objectyve.Skeleton.unset(this, p) ;
+                    Objectyve.Skeleton.set(this, p, 'concealed') ;
+                    defineProperty(this.prototype, p, {
+                        writable : true,
+                        enumerable : false,
+                        configurable : true
+                    }) ;
+                }
 
                 return this ;
             },
 
             static : function(properties)
             {
-                copySafe(this, properties) ;
+                copy(this, properties) ;
 
                 return this ;
             },
@@ -460,7 +544,33 @@ void function(jsCore) {
             nest : function(nested)
             {
                 for (var c in nested)
-                    this.__meta__.skeleton.nested[c] = clone(nested[c]) ;
+                    if (nested.propertyIsEnumerable(c))
+                        this.__meta__.skeleton.nested[c] = clone(nested[c]) ;
+
+                return this ;
+            },
+            
+            initialize : function(fn)
+            {
+                this.public({
+                    initialize : fn
+                }) ;
+
+                return this ;
+            },
+            
+            constructor : function(fn)
+            {
+                this.initialize(fn) ;
+
+                return this ;
+            },
+
+            main : function(fn)
+            {
+                this.static({
+                    main : fn
+                }) ;
 
                 return this ;
             },
@@ -483,7 +593,7 @@ void function(jsCore) {
             {
                 if (this.__meta__.plugins.requirejs) {
                     var _this = this ;
-                    global.define(deps || [], function() {
+                    root.define(deps || [], function() {
                         if (is.funct(callback)) callback.apply(_this, arguments) ;
                         return _this ;
                     }) ;
@@ -498,8 +608,16 @@ void function(jsCore) {
                 }
                 else if (this.__meta__.options.debug >= Objectyve.debug.MINIMAL) {
                     warn("Constructor definition function 'define()' called without effect.") ;
-                    if (is.funct(callback)) callback.apply(this, instances) ;
+                    if (is.funct(callback)) callback.call(this) ;
                 }
+
+                return this ;
+            },
+                
+            // Updates Constructor prototype for old browsers.
+            updatePrototype : function()
+            {
+                if (ECMAScript < 5) copy(this, Objectyve.Constructor) ;
 
                 return this ;
             }
@@ -542,20 +660,20 @@ void function(jsCore) {
                     var property ;
 
                     for (var p in constructor.prototype) {
-                        property = constructor.prototype[p] ;
-                        if (is.funct(property)) continue ;
+                        if (constructor.prototype.propertyIsEnumerable(p)) {
+                            property = constructor.prototype[p] ;
+                            if (is.funct(property)) continue ;
 
-                        if (constructor.__meta__.skeleton.public[p]) {
-                            if (is.object(property)) this[p] = clone(property) ;
-                            else this[p] = property ;
-                        }
-                        else if (constructor.__meta__.skeleton.hidden[p]) {
-                            if (is.object(property)) this[p] = clone(property) ;
-                            else this[p] = property ;
-                            defineProperty(this, p, {
-                                enumerable : false,
-                                configurable : true
-                            }) ;
+                            if (constructor.__meta__.skeleton.public[p]) {
+                                this[p] = clone(property) ;
+                            }
+                            else if (constructor.__meta__.skeleton.hidden[p]) {
+                                this[p] = clone(property) ;
+                                defineProperty(this, p, {
+                                    enumerable : false,
+                                    configurable : true
+                                }) ;
+                            }
                         }
                     }
 
@@ -563,8 +681,7 @@ void function(jsCore) {
                         property = constructor.prototype[pp] ;
                         if (is.funct(property)) continue ;
 
-                        if (is.object(property)) this[pp] = clone(property) ;
-                        else this[pp] = property ;
+                        this[pp] = clone(property) ;
                         defineProperty(this, pp, {
                             enumerable : false,
                             configurable : true
@@ -580,8 +697,7 @@ void function(jsCore) {
                             property = constructor.__meta__.skeleton.nested[cl][clp] ;
 
                             if (is.funct(property)) this[cl][clp] = applyFn(this, property) ;
-                            else if (is.object(property)) this[cl][clp] = clone(property) ;
-                            else this[cl][clp] = property ;
+                            else this[cl][clp] = clone(property) ;
                         }
                     }
                 }
@@ -589,12 +705,15 @@ void function(jsCore) {
 
             init : function(constructor, args)
             {
+                if (this._constructor === false)
+                    throw "Prototype is static and cannot be instanciated." ;
+
                 var performs = Objectyve.Instance.perform ;
                 for (var p=0, pl=performs.ORDER.length ; p<pl ; p++)
                     performs[performs.ORDER[p]].call(this, constructor) ;
-
-                if (constructor.__meta__.skeleton.public.constructor === true)
-                    return this._constructor.apply(this, args) ;
+                
+                if (constructor.__meta__.skeleton.public.initialize === true)
+                    return this.initialize.apply(this, args) ;
 
                 return this ;
             }
@@ -605,8 +724,7 @@ void function(jsCore) {
                 return Objectyve.Instance.init.call(this, Prototype, arguments) ;
             } ;
             Prototype.__meta__ = {
-                definition : {},
-                skeleton : clone(Objectyve.Skeleton),
+                skeleton : clone(Objectyve.Skeleton.modifiers),
                 options : clone(options),
                 plugins : clone(plugins)
             } ;
@@ -614,8 +732,14 @@ void function(jsCore) {
             switch (ECMAScript) {
                 case 6 :
                     Object.setPrototypeOf(Prototype, Objectyve.Constructor) ;
+                    break ;
                 case 5 :
                     Prototype.__proto__ = Objectyve.Constructor ;
+                    break ;
+                case 4 :
+                    copy(Prototype, Objectyve.Constructor) ;
+                    // Needs Prototype.updatePrototype() to be updated if new functions are added.
+                    break ;
             }
 
             if (is.object(args)) {
@@ -627,7 +751,7 @@ void function(jsCore) {
                     Prototype.plug(args.plug) ;
                     delete args.plug ;
                 }
-
+                
                 for (var a in args) {
                     if (Prototype[a])
                         Prototype[a](args[a]) ;
@@ -637,13 +761,15 @@ void function(jsCore) {
                         warn("Invalid call '"+a+"' while creating new Prototype.") ;
                 }
             }
+
+            if (is.funct(Prototype.main)) Prototype.main.call(Prototype, Prototype) ;
             
             return Prototype ;
         }
     } ;
 
     // Runs the now ready framework.
-    boot() ;
+    init() ;
 }(
     typeof window !== 'undefined' && window.document ? 'client'         // Web browser compatibility
   : typeof module !== 'undefined' && module.exports ? 'server'          // Node.js Server compatibility
