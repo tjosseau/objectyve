@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.5
- * @date        2014.06.02
+ * @version     0.5.6
+ * @date        2014.06.03
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -43,11 +43,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Version of framework's Core
             5,                      // Updates - Modifications
-            5,                      // Minor updates - Corrections
+            6,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 6               -1, // Month >---- of last update
-                2                   // Day  /
+                3                   // Day  /
             )
         ],
 
@@ -93,11 +93,22 @@ void function(jsCore) {
             // AMD compatibility, defines Objectÿve as a require-able module.
             if (typeof root.define === 'function') root.define(Objectyve) ;
             // Exports Objectÿve as a module for Node.js.
-            else if (jsCore === 'server') module.exports = Objectyve ;
-            else root.Objectyve = Objectyve ;
+            if (jsCore === 'server') module.exports = Objectyve ;
+            // Global access to Objectÿve.
+            root.Objectyve = Objectyve ;
         },
 
     // Utilities //
+
+        create = ECMAScript > 4 ?
+            Object.create :
+            (function() {
+                var F = function() {} ;
+                return function(o) {
+                    F.prototype = o ;
+                    return new F() ;
+                } ;
+            })(),
     
         // Reference to original method from Object prototype.
             // @param object <object> : Object to define a special property
@@ -120,7 +131,7 @@ void function(jsCore) {
             // @return <any> : If only one argument, first value given ; else all the arguments.
         echo = function()
         {
-            if (!options.silent && console) {
+            if (!options.silent && typeof console !== 'undefined') {
                 if (ECMAScript > 4) console.log.apply(console, arguments) ;
                 else console.log(arguments[0]) ;
             }
@@ -131,10 +142,8 @@ void function(jsCore) {
             // @param string <string> : Message to warn
         warn = function(string)
         {
-            if (!options.silent && console) console.info('/!\\ '+string) ;
+            if (!options.silent && typeof console !== 'undefined') console.info('/!\\ '+string) ;
         },
-
-        async = setTimeout,
 
         // Set of type checking
             // @param o <any> : Variable to check type
@@ -155,7 +164,10 @@ void function(jsCore) {
                     else if (is.array(o)) return 'array' ;
                     else return 'null' ;
                 }
-                else if (is.number(o)) return 'number' ;
+                else if (typeof o === 'number') {
+                    if (is.number(o)) return 'number' ;
+                    else return 'nan' ;
+                }
                 else return typeof o ;
             }
         },
@@ -163,16 +175,6 @@ void function(jsCore) {
         has = {
             value :         function(v, a) { var i = a.length ; do if (a[i] === v) return true ; while(i--) ; return false ; }
         },
-
-        create = ECMAScript > 4 ?
-            Object.create :
-            (function() {
-                var F = function() {} ;
-                return function(o) {
-                    F.prototype = o ;
-                    return new F() ;
-                } ;
-            })(),
 
         // Clones an object for independant object copies.
             // @param object <object> : Object to clone
@@ -340,7 +342,7 @@ void function(jsCore) {
 
         Skeleton : {
             modifiers : {
-                'public' : {},
+                public : {},
                 hidden : {},
                 shared : {},
                 concealed : {},
@@ -396,21 +398,16 @@ void function(jsCore) {
 
             module : function(fullname)
             {
-                async(function() {
-                    if (fullname.indexOf('.') !== -1)
-                        warn('Module name "'+fullname+'" contains a dot. Did you mean "'+(fullname.replace(/\./g, '/'))+'" ?') ;
-                }) ;
-
-                var tree = fullname.split('/'),
+                var tree = fullname.replace(/\./g, '/').split('/'),
                     size = tree.length,
                     _root = root ;
-
+                
                 for (var word, w=0, wl=size ; w<wl ; w++) {
                     word = tree[w] ;
 
                     if (_root[word] == null) _root[word] = {} ;
-                    /*else if (!is.object(_root[word]) && !is.funct(_root[word]) && this.__meta__.options.strict >= Objectyve.strict.LOW)
-                        throw "Invalid module root '"+_root[word]+"' for '"+fullname+"'." ;*/
+                    else if (this.options().strict >= Objectyve.debug.MEDIUM)
+                        warn("Module root '"+fullname+"' has an already defined branch, it will be mutated.") ;
 
                     if (w < size-1) _root = _root[word] ;
                     else _root[word] = this ;
@@ -444,7 +441,7 @@ void function(jsCore) {
                         copy(this.prototype, constructor.prototype) ;
                     else if (is.object(constructor))
                         copy(this.prototype, constructor) ;
-                    else throw "Cannot mixin '"+constructor+"' with a prototype." ;
+                    else throw "Cannot mixin '"+constructor+"' with a prototype. Mixins require a function or an object." ;
 
                     if (constructor.__meta__ && constructor.__meta__.skeleton) {
                         copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
@@ -462,7 +459,7 @@ void function(jsCore) {
                 return this ;
             },
 
-            'public' : function(properties)
+            public : function(properties)
             {
                 properties = copySafe({}, properties) ;
                 copy(this.prototype, properties) ;
@@ -577,21 +574,21 @@ void function(jsCore) {
 
             plug : function(name, instance)
             {
-                this.__meta__.plugins[name] = instance ;
+                this.plugins()[name] = instance ;
 
                 return this ;
             },
 
             configure : function(opts)
             {
-                configure.call(this.__meta__.options, opts) ;
+                configure.call(this.options(), opts) ;
 
                 return this ;
             },
 
             define : function(deps, callback)
             {
-                if (this.__meta__.plugins.requirejs) {
+                if (this.plugins().requirejs) {
                     var _this = this ;
                     root.define(deps || [], function() {
                         if (is.funct(callback)) callback.apply(_this, arguments) ;
@@ -606,7 +603,7 @@ void function(jsCore) {
                     if (is.funct(callback)) callback.apply(this, instances) ;
                     module.exports = this ;
                 }
-                else if (this.__meta__.options.debug >= Objectyve.debug.MINIMAL) {
+                else if (this.options().debug >= Objectyve.debug.MINIMAL) {
                     warn("Constructor definition function 'define()' called without effect.") ;
                     if (is.funct(callback)) callback.call(this) ;
                 }
@@ -705,7 +702,7 @@ void function(jsCore) {
 
             init : function(constructor, args)
             {
-                if (this._constructor === false)
+                if (this.initialize === false)
                     throw "Prototype is static and cannot be instanciated." ;
 
                 var performs = Objectyve.Instance.perform ;
