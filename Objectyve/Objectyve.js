@@ -3,13 +3,12 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.6
- * @date        2014.06.03
+ * @version     0.5.8
+ * @date        2014.06.06
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
- *      JavaScript framework to simplify prototypes construction.
- *      (Second core bêta version)
+ *      JavaScript framework as a light but extended prototype factory.
  */
 
 void function(jsCore) {
@@ -19,59 +18,74 @@ void function(jsCore) {
 //      Compatibility checking
 //---------------------------------------------------------------------------------------------------------------------------//
 
-    // Defines the global container and local reference to the framework.
-    var root, ECMAScript, Objectyve, __Objectyve ;
-    // Argument 'jsCore' as type of JavaScript core between a client (browser) and a server (here Node.js).
+    var root,           // Global container (window, GLOBAL, else...)
+        ECMAScript,     // JavaScript version compatibility
+        Objectyve,      // Framework instance
+        __Objectyve ;   // Copy of possible previous instance
+
+    // Stores the global container depending on the JavaScript core.
     switch (jsCore) {
-        case 'client' : root = window ;       break ;     // Client side JavaScript
-        case 'server' : root = GLOBAL ;       break ;     // Server side JavaScript (with Node.js)
+        case 'client' : root = window ;       break ;     // Client-side JavaScript
+        case 'server' : root = GLOBAL ;       break ;     // Server-side JavaScript (with Node.js)
         default :       root = {} ;           break ;     // Unknown context
     }
 
+    // Detects and stores JavaScript version compatibility.
     if (typeof Object.setPrototypeOf === 'function') ECMAScript = 6 ;
     else if (typeof (function() {}).__proto__ === 'function') ECMAScript = 5 ;
     else ECMAScript = 4 ;
 
-    // Stores the possibly already defined framework. Use `Objectyve.noConflict()` to get a concealed instance.
+    // Stores the possibly already defined framework. Use `Objectyve.noConflict()` to get a private instance.
     __Objectyve = root.Objectyve ;
 
 //---------------------------------------------------------------------------------------------------------------------------//
-//      Constants
+//      Constants & variables
 //---------------------------------------------------------------------------------------------------------------------------//
 
-        // Version of Objectyve - accessible with `Objectyve.version()`
+        // Version of Objectyve
+            // Accessible with `Objectyve.version()`
     var VERSION = [
-            0,                      // Version of framework's Core
+            0,                      // Core version
             5,                      // Updates - Modifications
-            6,                      // Minor updates - Corrections
+            8,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 6               -1, // Month >---- of last update
-                3                   // Day  /
+                6                   // Day  /
             )
         ],
 
+        // Framework options
+            // Configurable with `Objectyve.configure()`
         options = {
-            silent : false,
-            strict : 0,
-            debug : 0
+            silent : false,         // If silent, no `echo` neither `warn`.
+            strict : 0,             // Strict levels send warnings or throws exception.
+            debug : 0               // Debug levels echoes various information messages.
         },
 
+        // Plugins linked to framework
+            // Linkable with `Objectyve.plug({...})`
         plugins = {
-            requirejs : null
+            requirejs : null        // You may use `Prototype().define()` as `define(dependencies, Prototype)`.
         },
 
+        // Dictionnary of reserved keywords
+            // Each reserved word has its replacement.
         reserved = {
-            constructor : 'initialize'
+            constructor : 'initialize'      // 'constructor' is a reserved key for object instances.
         },
+
+//---------------------------------------------------------------------------------------------------------------------------//
+//      Framework initializing
+//---------------------------------------------------------------------------------------------------------------------------//
 
         init = function() {
-        // Preparing framework //
-
+        // Setting framework strict level as low by default.
             Objectyve.options.strict = Objectyve.strict.LOW ;
 
+        // Parsing framework version
             var to0n = function(num) { return num < 10 ? '0'+num : ''+num ; } ;
-            // Generating a comprehensive version accessor of Objectÿve.
+            // Generates a comprehensive version accessor of Objectÿve.
             Objectyve.version.core = VERSION[0] ;
             Objectyve.version.update = VERSION[1] ;
             Objectyve.version.correction = VERSION[2] ;
@@ -89,46 +103,70 @@ void function(jsCore) {
                                                                 + to0n(VERSION[3].getDate()) ;
             } ;
 
-        // Exporting //
+        // Exporting framework instance //
             // AMD compatibility, defines Objectÿve as a require-able module.
             if (typeof root.define === 'function') root.define(Objectyve) ;
             // Exports Objectÿve as a module for Node.js.
             if (jsCore === 'server') module.exports = Objectyve ;
-            // Global access to Objectÿve.
+            // Exports a global access to Objectÿve.
             root.Objectyve = Objectyve ;
         },
 
-    // Utilities //
+//---------------------------------------------------------------------------------------------------------------------------//
+//      Core functions
+//---------------------------------------------------------------------------------------------------------------------------//
 
+    // Polyfills //
+
+        // Reference to `Object.create()`
+            // @param prototype <object> : Object as prototype of new instance
+            // @return <object> : New instance created
         create = ECMAScript > 4 ?
             Object.create :
             (function() {
                 var F = function() {} ;
-                return function(o) {
-                    F.prototype = o ;
+                return function(p) {
+                    F.prototype = p ;
                     return new F() ;
                 } ;
             })(),
     
-        // Reference to original method from Object prototype.
+        // Reference to `Object.defineProperty()`
             // @param object <object> : Object to define a special property
             // @param property <string> : Name of property to alter
-            // @param options <object> : Set of property options
+            // @param options <object> : Property options
+            // @return <object> : Object given
         defineProperty = ECMAScript > 4 ?
             Object.defineProperty :
             function() {
                 try { return Object.defineProperty.apply(arguments[0], arguments) ; }
                 catch (e) {
                     if (Objectyve.options.debug >= Objectyve.debug.MEDIUM) warn(e) ;
+                    return arguments[0] ;
                 }
             },
 
-        // Displays a message in the browser log as returning the first given argument.
+        // Reference to `Function.prototype.bind()`
+            // @param fn <function> : Function to bind
+            // @param context <object> : Object context
+        bind = ECMAScript > 4 ?
+            function(fn, context) {
+                return fn.bind(context) ;
+            } :
+            function(fn, context) {
+                return function() {
+                    return fn.apply(context, arguments) ;
+                } ;
+            },
+
+    // Utilities //
+
+        // Call the browser log as returning the first given argument.
         // This allows both echoing the value(s) and getting the first back
         // (i.e. 'return test ;' equals to 'return echo(test, ' is a variable.') ;' into the script).
-        // This method can be silent if 'silent' option is set as true.
+        // This method can be silent if 'silent' option is set as true with `Objectyve.configure()`.
             // @param arguments* <any> : Given value(s) to display
-            // @return <any> : If only one argument, first value given ; else all the arguments.
+            // @return <any> : First value given
         echo = function()
         {
             if (!options.silent && typeof console !== 'undefined') {
@@ -145,8 +183,8 @@ void function(jsCore) {
             if (!options.silent && typeof console !== 'undefined') console.info('/!\\ '+string) ;
         },
 
-        // Set of type checking
-            // @param o <any> : Variable to check type
+        // Set of type and state checking
+            // @param o <any> : Variable to check
             // @return <boolean>
         is = {
             object :        function(o) { return o != null && typeof o === 'object' && !is.array(o) ; },
@@ -172,11 +210,7 @@ void function(jsCore) {
             }
         },
 
-        has = {
-            value :         function(v, a) { var i = a.length ; do if (a[i] === v) return true ; while(i--) ; return false ; }
-        },
-
-        // Clones an object for independant object copies.
+        // Deep clones an object (or anything) to be independent.
             // @param object <object> : Object to clone
             // @return <object> : Cloned object
         clone = function(object)
@@ -203,44 +237,49 @@ void function(jsCore) {
             return cloned ;
         },
 
-        // Simple copy (by reference if contains objects).
-            // @param context <object> : Copy properties to
+        // Copies all properties from an object to a target object (copy by reference).
+            // @param target <object> : Copy properties to
             // @param object <object> : Copy properties from
-            // @return <object> : Copied object
-        copy = function(context, object)
+            // @return <object> : Given target
+        copy = function(target, object)
         {
             for (var p in object)
                 if (object.propertyIsEnumerable(p))
-                    context[p] = object[p] ;
-            return context ;
+                    target[p] = object[p] ;
+            return target ;
         },
 
+        // Copies all properties (as previously) as converting reserved keys.
+            // @param target <object> : Copy properties to
+            // @param object <object> : Copy properties from
+            // @return <object> : Given target
         copySafe = function(context, object)
         {
             for (var p in object)
                 if (object.propertyIsEnumerable(p)) {
-                    if (p in reserved)
-                        context[reserved[p]] = object[p] ;
-                    else
-                        context[p] = object[p] ;
+                    if (p in reserved) context[reserved[p]] = object[p] ;
+                    else context[p] = object[p] ;
                 }
             return context ;
         },
 
+        // Flattens given arrays and objects into one array.
+            // @param arguments* <any> : Object to flatten in array
+            // @return <array> : Flattened array
         list = function()
         {
-            return [].concat.apply([], arguments).filter(function(el, i, self) {
-                return el != null && self.indexOf(el) === i ;
-            }) ;
+            var array = [] ;
+            for (var a=0, al=arguments.length ; a<al ; a++) {
+                if (is.array(arguments[a]))
+                    array = array.concat(list.apply(null, arguments[a])) ;
+                else
+                    array.push(arguments[a]) ;
+            }
+            return array ;
         },
 
-        applyFn = function(context, fn)
-        {
-            return function() {
-                return fn.apply(context, arguments) ;
-            } ;
-        },
-
+        // Configurates both Objectyve and specific Prototypes.
+            // @param opts <object> : Options
         configure = function(opts)
         {
             if (opts.silent != null) this.silent = !!opts.silent ;
@@ -261,46 +300,58 @@ void function(jsCore) {
         } ;
 
 //---------------------------------------------------------------------------------------------------------------------------//
-//      Objectyve Core
+//      Objectyve Core Instance
 //---------------------------------------------------------------------------------------------------------------------------//
 
     Objectyve = {
 
-    // Variables //
+    // Variables //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // JavaScript version compatibility
         ECMAScript : ECMAScript,
 
+        // Debug level constants
         debug : {
-            SILENT : 0,
-            MINIMAL : 1,
-            MEDIUM : 2,
-            ALL : 3
+            MINIMAL : 0,    // Minimal information
+            MEDIUM : 1,     // ...
+            ALL : 2         // ...
         },
 
+        // Strict level constants
         strict : {
-            NONE : 0,
-            LOW : 1,
-            HIGH : 2
+            NONE : 0,       // Strict mode off
+            LOW : 1,        // ...
+            HIGH : 2        // ...
         },
 
-    // Settings //
+    // Settings ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        // Options
         options : options,
 
+        // Plugins
         plugins : plugins,
 
+        // Returns a private instance of Objectyve
+            // @return <object> : Objectÿve instance
         noConflict : function()
         {
             root.Objectyve = __Objectyve ;
+            if (root.Objectyve == null) delete root.Objectyve ;
+
             return Objectyve ;
         },
 
-        // Returns Objectyve's version information.
-            // @return <int> : framework's build version
+        // Returns version information of framework.
+            // @return <int> : Framework's build version
         version : function()
         {
             return this.version.build ;
         },
 
+        // Defined options to framework.
+            // @param opts <object> : Options
+            // @return <object> : Objectÿve instance
         configure : function(opts)
         {
             configure.call(options, opts) ;
@@ -308,6 +359,9 @@ void function(jsCore) {
             return this ;
         },
 
+        // Plugs libraries to framework.
+            // @param plugs <object> : Libraries to plug in
+            // @return <object> : Objectÿve instance
         plug : function(plugs)
         {
             copy(plugins, plugs) ;
@@ -315,6 +369,8 @@ void function(jsCore) {
             return this ;
         },
         
+        // Sets framework utilities and functions as global variables.
+            // @return <object> : Objectÿve instance
         globalize : function()
         {
             for (var m=0, ml=arguments.length ; m<ml ; m++)
@@ -323,11 +379,10 @@ void function(jsCore) {
             return this ;
         },
 
-    // Public Utilities //
+    // Public Utilities ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
         util : {
             is : is,
-            has : has,
             create : create,
             clone : clone,
             copy : copy,
@@ -338,9 +393,14 @@ void function(jsCore) {
         echo : echo,
         warn : warn,
 
-    // Engines //
+    // Engines ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        // Skeleton structure
+            // Stored in the Prototype constructor function.
+            // Allows to perform property manipulations such as hidden or nested.
         Skeleton : {
+            // Default object to clone for each Prototype.
+                // You may alter this to add another modifier type for your Objectÿve plugin.
             modifiers : {
                 public : {},
                 hidden : {},
@@ -349,24 +409,24 @@ void function(jsCore) {
                 nested : {}
             },
 
-            set : function(constructor, member, visibility)
+            // Sets the member's modifier as activated.
+                // @param constructor <function> : Constructor to alter
+                // @param member <string> : Name of property
+                // @param modifier <string> : Name of modifier
+            set : function(constructor, member, modifier)
             {
-                constructor.__meta__.skeleton[visibility][member] = true ;
+                constructor.__meta__.skeleton[modifier][member] = true ;
             },
 
+            // Removes all the member's modifiers.
+                // @param constructor <function> : Constructor to alter
+                // @param member <string> : Name of property
             unset : function(constructor, member)
             {
                 var meta = constructor.__meta__ ;
-                for (var v in meta.skeleton) {
-                    if (meta.skeleton[v][member]) {
-                        if (meta.options.strict === Objectyve.strict.HIGH)
-                            throw "Member named '"+member+"' is already defined as "+v+"." ;
-                        else if (meta.options.strict === Objectyve.strict.LOW)
-                            warn("Member named '"+member+"' is already defined as "+v+".") ;
-                        else delete meta.skeleton[v][member] ;
-                        break ;
-                    }
-                }
+                for (var m in meta.skeleton)
+                    if (meta.skeleton[m][member])
+                        delete meta.skeleton[m][member] ;
             }
         },
         
@@ -406,8 +466,8 @@ void function(jsCore) {
                     word = tree[w] ;
 
                     if (_root[word] == null) _root[word] = {} ;
-                    else if (this.options().strict >= Objectyve.debug.MEDIUM)
-                        warn("Module root '"+fullname+"' has an already defined branch, it will be mutated.") ;
+                    else if (this.options().debug === Objectyve.debug.ALL)
+                        warn("Module root '"+fullname+"' has an already defined branch, it will be altered.") ;
 
                     if (w < size-1) _root = _root[word] ;
                     else _root[word] = this ;
@@ -477,6 +537,13 @@ void function(jsCore) {
                 return this ;
             },
 
+            attr : function(properties)
+            {
+                this.public(properties) ;
+
+                return this ;
+            },
+
             hidden : function(properties)
             {
                 properties = copySafe({}, properties) ;
@@ -509,6 +576,13 @@ void function(jsCore) {
                         configurable : true
                     }) ;
                 }
+
+                return this ;
+            },
+
+            methods : function(properties)
+            {
+                this.shared(properties) ;
 
                 return this ;
             },
@@ -765,7 +839,11 @@ void function(jsCore) {
         }
     } ;
 
-    // Runs the now ready framework.
+//---------------------------------------------------------------------------------------------------------------------------//
+//      End of Core Instance
+//---------------------------------------------------------------------------------------------------------------------------//
+
+    // Initializes the now ready framework.
     init() ;
 }(
     typeof window !== 'undefined' && window.document ? 'client'         // Web browser compatibility
