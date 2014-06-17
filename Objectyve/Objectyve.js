@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.8
- * @date        2014.06.06
+ * @version     0.5.9
+ * @date        2014.06.17
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             5,                      // Updates - Modifications
-            8,                      // Minor updates - Corrections
+            9,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 6               -1, // Month >---- of last update
-                6                   // Day  /
+                17                  // Day  /
             )
         ],
 
@@ -497,7 +497,7 @@ void function(jsCore) {
                 for (var c=0, cl=args.length ; c<cl ; c++) {
                     constructor = args[c] ;
 
-                    if (constructor.prototype)
+                    if (is.funct(constructor))
                         copy(this.prototype, constructor.prototype) ;
                     else if (is.object(constructor))
                         copy(this.prototype, constructor) ;
