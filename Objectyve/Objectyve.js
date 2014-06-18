@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.9
- * @date        2014.06.17
+ * @version     0.5.10
+ * @date        2014.06.18
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             5,                      // Updates - Modifications
-            9,                      // Minor updates - Corrections
+            10,                     // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 6               -1, // Month >---- of last update
-                17                  // Day  /
+                18                  // Day  /
             )
         ],
 
@@ -276,6 +276,13 @@ void function(jsCore) {
                     array.push(arguments[a]) ;
             }
             return array ;
+        },
+        
+        applyFn = function(context, fn)
+        {
+            return function() {
+                return fn.apply(context, arguments) ;
+            } ;
         },
 
         // Configurates both Objectyve and specific Prototypes.
