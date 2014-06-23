@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.10
- * @date        2014.06.18
+ * @version     0.5.11
+ * @date        2014.06.21
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             5,                      // Updates - Modifications
-            10,                     // Minor updates - Corrections
+            11,                     // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 6               -1, // Month >---- of last update
-                18                  // Day  /
+                21                  // Day  /
             )
         ],
 
@@ -491,7 +491,7 @@ void function(jsCore) {
                     copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                 }
                 this.parent = constructor ;
-                this.prototype['super'] = constructor.prototype._constructor ;
+                this.prototype['super'] = constructor.prototype.initialize ;
 
                 return this ;
             },
@@ -619,7 +619,7 @@ void function(jsCore) {
                 return this ;
             },
 
-            nest : function(nested)
+            nested : function(nested)
             {
                 for (var c in nested)
                     if (nested.propertyIsEnumerable(c))
@@ -738,20 +738,19 @@ void function(jsCore) {
                     var property ;
 
                     for (var p in constructor.prototype) {
-                        if (constructor.prototype.propertyIsEnumerable(p)) {
-                            property = constructor.prototype[p] ;
-                            if (is.funct(property)) continue ;
+                        // ! \\ Prototype object properties must not be filtered by 'isEnumerable'.
+                        property = constructor.prototype[p] ;
+                        if (is.funct(property)) continue ;
 
-                            if (constructor.__meta__.skeleton.public[p]) {
-                                this[p] = clone(property) ;
-                            }
-                            else if (constructor.__meta__.skeleton.hidden[p]) {
-                                this[p] = clone(property) ;
-                                defineProperty(this, p, {
-                                    enumerable : false,
-                                    configurable : true
-                                }) ;
-                            }
+                        if (constructor.__meta__.skeleton.public[p]) {
+                            this[p] = clone(property) ;
+                        }
+                        else if (constructor.__meta__.skeleton.hidden[p]) {
+                            this[p] = clone(property) ;
+                            defineProperty(this, p, {
+                                enumerable : false,
+                                configurable : true
+                            }) ;
                         }
                     }
 
