@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.11
- * @date        2014.06.21
+ * @version     0.5.12
+ * @date        2014.06.27
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             5,                      // Updates - Modifications
-            11,                     // Minor updates - Corrections
+            12,                     // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 6               -1, // Month >---- of last update
-                21                  // Day  /
+                27                  // Day  /
             )
         ],
 
@@ -667,26 +667,42 @@ void function(jsCore) {
                 return this ;
             },
 
-            define : function(deps, callback)
+            define : function($1, $2, $3)
             {
+                var context = root,
+                    deps = [],
+                    callback = function() {} ;
+                if (is.array($1)) {
+                    deps = $1 ;
+                    if (is.funct($2)) callback = $2 ;
+                }
+                else if (is.object($1)) {
+                    context = $1 ;
+                    if (is.array($2)) {
+                        deps = $2 ;
+                        if (is.funct($3)) callback = $3 ;
+                    }
+                    else if (is.funct($2)) callback = $2 ;
+                }
+                else if (is.funct($1)) callback = $1 ;
+
                 if (this.plugins().requirejs) {
                     var _this = this ;
-                    root.define(deps || [], function() {
-                        if (is.funct(callback)) callback.apply(_this, arguments) ;
+                    context.define(deps, function() {
+                        callback.apply(_this, arguments) ;
                         return _this ;
                     }) ;
                 }
                 else if (jsCore === 'server') {
                     var instances = [] ;
-                    if (deps)
-                        for (var d=0, dl=deps.length ; d<dl ; d++)
-                            instances.push(require(deps[d])) ;
-                    if (is.funct(callback)) callback.apply(this, instances) ;
-                    module.exports = this ;
+                    for (var d=0, dl=deps.length ; d<dl ; d++)
+                        instances.push(require(deps[d])) ;
+                    callback.apply(this, instances) ;
+                    if (context !== root) context.exports = this ;
                 }
                 else if (this.options().debug >= Objectyve.debug.MINIMAL) {
                     warn("Constructor definition function 'define()' called without effect.") ;
-                    if (is.funct(callback)) callback.call(this) ;
+                    callback.call(this) ;
                 }
 
                 return this ;
