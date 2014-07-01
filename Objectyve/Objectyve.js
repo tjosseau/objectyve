@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.12
- * @date        2014.06.27
+ * @version     0.5.13
+ * @date        2014.07.01
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             5,                      // Updates - Modifications
-            12,                     // Minor updates - Corrections
+            13,                     // Minor updates - Corrections
             new Date(
                 2014,               // Year \
-                6               -1, // Month >---- of last update
-                27                  // Day  /
+                7               -1, // Month >---- of last update
+                1                   // Day  /
             )
         ],
 
@@ -276,13 +276,6 @@ void function(jsCore) {
                     array.push(arguments[a]) ;
             }
             return array ;
-        },
-        
-        applyFn = function(context, fn)
-        {
-            return function() {
-                return fn.apply(context, arguments) ;
-            } ;
         },
 
         // Configurates both Objectyve and specific Prototypes.
@@ -789,7 +782,7 @@ void function(jsCore) {
                         for (var clp in constructor.__meta__.skeleton.nested[cl]) {
                             property = constructor.__meta__.skeleton.nested[cl][clp] ;
 
-                            if (is.funct(property)) this[cl][clp] = applyFn(this, property) ;
+                            if (is.funct(property)) this[cl][clp] = bind(property, this) ;
                             else this[cl][clp] = clone(property) ;
                         }
                     }
