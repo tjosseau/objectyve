@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.5.13
- * @date        2014.07.01
+ * @version     0.6.1
+ * @date        2014.07.13
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -46,12 +46,12 @@ void function(jsCore) {
             // Accessible with `Objectyve.version()`
     var VERSION = [
             0,                      // Core version
-            5,                      // Updates - Modifications
-            13,                     // Minor updates - Corrections
+            6,                      // Updates - Modifications
+            1,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 7               -1, // Month >---- of last update
-                1                   // Day  /
+                13                  // Day  /
             )
         ],
 
@@ -448,12 +448,35 @@ void function(jsCore) {
                 return this.__meta__.plugins ;
             },
 
-        // Setters //
-
             create : function()
             {
                 var instance = create(this.prototype) ;
                 return Objectyve.Instance.init.call(instance, this, arguments) ;
+            },
+
+        // Setters //
+
+            set : function(args)
+            {
+                if (args.configure) {
+                    this.configure(args.configure) ;
+                    delete args.configure ;
+                }
+                if (args.plug) {
+                    this.plug(args.plug) ;
+                    delete args.plug ;
+                }
+                
+                for (var a in args) {
+                    if (is.funct(this[a]))
+                        this[a](args[a]) ;
+                    else if (this.options().strict === Objectyve.strict.HIGH)
+                        throw "Invalid call '"+a+"' while creating new Prototype." ;
+                    else if (this.options().strict === Objectyve.strict.LOW)
+                        warn("Invalid call '"+a+"' while creating new Prototype.") ;
+                }
+
+                return this ;
             },
 
             module : function(fullname)
@@ -828,25 +851,10 @@ void function(jsCore) {
                     break ;
             }
 
-            if (is.object(args)) {
-                if (args.configure) {
-                    Prototype.configure(args.configure) ;
-                    delete args.configure ;
-                }
-                if (args.plug) {
-                    Prototype.plug(args.plug) ;
-                    delete args.plug ;
-                }
-                
-                for (var a in args) {
-                    if (Prototype[a])
-                        Prototype[a](args[a]) ;
-                    else if (Prototype.options().strict === Objectyve.strict.HIGH)
-                        throw "Invalid call '"+a+"' while creating new Prototype." ;
-                    else if (Prototype.options().strict === Objectyve.strict.LOW)
-                        warn("Invalid call '"+a+"' while creating new Prototype.") ;
-                }
-            }
+            if (is.object(args))
+                Prototype.set(args) ;
+            else if (is.funct(args))
+                args.call(Prototype, bind(Prototype.set, Prototype), Prototype) ;
 
             if (is.funct(Prototype.main)) Prototype.main.call(Prototype, Prototype) ;
             
