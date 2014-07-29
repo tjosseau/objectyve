@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.6.1
- * @date        2014.07.13
+ * @version     0.6.3
+ * @date        2014.07.24
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             6,                      // Updates - Modifications
-            1,                      // Minor updates - Corrections
+            3,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 7               -1, // Month >---- of last update
-                13                  // Day  /
+                24                  // Day  /
             )
         ],
 
@@ -507,7 +507,7 @@ void function(jsCore) {
                     copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                 }
                 this.parent = constructor ;
-                this.prototype['super'] = constructor.prototype.initialize ;
+                this['super'] = constructor.prototype ;
 
                 return this ;
             },
@@ -686,6 +686,7 @@ void function(jsCore) {
             define : function($1, $2, $3)
             {
                 var context = root,
+                    plugins = this.plugins(),
                     deps = [],
                     callback = function() {} ;
                 if (is.array($1)) {
@@ -702,9 +703,10 @@ void function(jsCore) {
                 }
                 else if (is.funct($1)) callback = $1 ;
 
-                if (this.plugins().requirejs) {
-                    var _this = this ;
-                    context.define(deps, function() {
+                if (plugins.requirejs) {
+                    var _this = this,
+                        def = typeof plugins.requirejs === 'function' ? plugins.requirejs : context.define ;
+                    def(deps, function() {
                         callback.apply(_this, arguments) ;
                         return _this ;
                     }) ;
@@ -854,7 +856,7 @@ void function(jsCore) {
             if (is.object(args))
                 Prototype.set(args) ;
             else if (is.funct(args))
-                args.call(Prototype, bind(Prototype.set, Prototype), Prototype) ;
+                args.call(Prototype, Prototype, bind(Prototype.set, Prototype)) ;
 
             if (is.funct(Prototype.main)) Prototype.main.call(Prototype, Prototype) ;
             
