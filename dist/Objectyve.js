@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.6.3
- * @date        2014.07.24
+ * @version     0.7.3
+ * @date        2014.11.16
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -12,7 +12,7 @@
  */
 
 void function(jsCore) {
-    // "use strict" ; // Strict mode - Disabled in production
+    // "use strict" ; // Strict mode - Only enabled before release
     
 //---------------------------------------------------------------------------------------------------------------------------//
 //      Compatibility checking
@@ -46,12 +46,12 @@ void function(jsCore) {
             // Accessible with `Objectyve.version()`
     var VERSION = [
             0,                      // Core version
-            6,                      // Updates - Modifications
+            7,                      // Updates - Modifications
             3,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
-                7               -1, // Month >---- of last update
-                24                  // Day  /
+                11              -1, // Month >---- of last update
+                16                  // Day  /
             )
         ],
 
@@ -66,7 +66,7 @@ void function(jsCore) {
         // Plugins linked to framework
             // Linkable with `Objectyve.plug({...})`
         plugins = {
-            requirejs : null        // You may use `Prototype().define()` as `define(dependencies, Prototype)`.
+            amd : null              // You may use `Prototype().define()` as `define(dependencies, Prototype)`.
         },
 
         // Dictionnary of reserved keywords
@@ -80,9 +80,6 @@ void function(jsCore) {
 //---------------------------------------------------------------------------------------------------------------------------//
 
         init = function() {
-        // Setting framework strict level as low by default.
-            Objectyve.options.strict = Objectyve.strict.LOW ;
-
         // Parsing framework version
             var to0n = function(num) { return num < 10 ? '0'+num : ''+num ; } ;
             // Generates a comprehensive version accessor of Objectÿve.
@@ -91,7 +88,7 @@ void function(jsCore) {
             Objectyve.version.correction = VERSION[2] ;
             // Build version of framework (i.e. 102034 means 1.2.34).
             Objectyve.version.build = 100000 * VERSION[0] + 1000 * VERSION[1] + VERSION[2] ;
-            Objectyve.version.date = VERSION[3].getTime() ;
+            Objectyve.version.date = VERSION[3] ;
             // Adds a toString version of Objectÿve version.
             Objectyve.version.toString = function() {
                 return 'Objectÿve version '
@@ -100,7 +97,8 @@ void function(jsCore) {
                     + Objectyve.version.correction
                     + ' (build ' + Objectyve.version() + ') dated ' + VERSION[3].getFullYear() + '.'
                                                                 + to0n(VERSION[3].getMonth()+1) + '.'
-                                                                + to0n(VERSION[3].getDate()) ;
+                                                                + to0n(VERSION[3].getDate())
+                    + ' / ECMAScript ' + ECMAScript + ' detected'
             } ;
 
         // Exporting framework instance //
@@ -116,7 +114,7 @@ void function(jsCore) {
 //      Core functions
 //---------------------------------------------------------------------------------------------------------------------------//
 
-    // Polyfills //
+    // Internal polyfills //
 
         // Reference to `Object.create()`
             // @param prototype <object> : Object as prototype of new instance
@@ -141,7 +139,7 @@ void function(jsCore) {
             function() {
                 try { return Object.defineProperty.apply(arguments[0], arguments) ; }
                 catch (e) {
-                    if (Objectyve.options.debug >= Objectyve.debug.MEDIUM) warn(e) ;
+                    if (options.debug >= Objectyve.debug.MEDIUM || options.strict >= Objectyve.strict.HIGH) warn(e) ;
                     return arguments[0] ;
                 }
             },
@@ -176,14 +174,21 @@ void function(jsCore) {
             return arguments[0] ;
         },
 
-        // Displays a warning message in the browser info.
+        // Displays an information message in the console.
+            // @param string <string> : Message to display
+        info = function(string)
+        {
+            if (!options.silent && typeof console !== 'undefined') console.info(string) ;
+        },
+
+        // Displays a warning message in the console.
             // @param string <string> : Message to warn
         warn = function(string)
         {
-            if (!options.silent && typeof console !== 'undefined') console.info('/!\\ '+string) ;
+            if (!options.silent && typeof console !== 'undefined') console.warn(string) ;
         },
 
-        // Set of type and state checking
+        // Set of type and state checking.
             // @param o <any> : Variable to check
             // @return <boolean>
         is = {
@@ -196,6 +201,7 @@ void function(jsCore) {
             container :     function(o) { return is.object(o) || is.array(o) ; },
             empty :         function(o) { for (var p in o) if (o.propertyIsEnumerable(p)) return false ; return true ; },
             
+            // Returns the type as a string - More advanced than `typeof`.
             ofType : function(o) {
                 if (typeof o === 'object') {
                     if (is.object(o)) return 'object' ;
@@ -230,6 +236,7 @@ void function(jsCore) {
 
                     // Recursive cloning
                     if (is.container(object[p])) cloned[p] = clone(object[p]) ;
+                    // Simple copy
                     else cloned[p] = object[p] ;
                 }
             }
@@ -278,10 +285,64 @@ void function(jsCore) {
             return array ;
         },
 
+        require = function(deps, fn)
+        {
+            var d,
+                i,
+                dependencies,
+                objDeps ;
+
+            if (is.array(deps)) {
+                dependencies = deps ;
+                objDeps = [] ;
+            }
+            else {
+                dependencies = [] ;
+                objDeps = {} ;
+                for (d in deps) dependencies.push(deps[d]) ;
+            }
+
+            if (options.debug >= Objectyve.debug.ALL) {
+                info("Objectÿve: Loading modules...") ;
+                echo(dependencies) ;
+            }
+
+            if (!dependencies.length) return fn(objDeps) ;
+
+            if (plugins.amd) {
+                root.require(dependencies, function() {
+                    i = 0 ;
+                    for (d in deps) {
+                        objDeps[d] = arguments[i] ;
+                        i++ ;
+                    }
+
+                    return fn(objDeps) ;
+                }) ;
+            }
+            else if (jsCore === 'server') {
+                for (d in deps)
+                    objDeps[d] = require(deps[d]) ;
+                return fn(objDeps) ;
+            }
+
+            else if (options.strict >= Objectyve.strict.LOW) {
+                warn("Cannot require anything if no module loader is available.") ;
+                return fn(objDeps) ;
+            }
+        },
+
         // Configurates both Objectyve and specific Prototypes.
             // @param opts <object> : Options
         configure = function(opts)
         {
+            if (options.debug >= Objectyve.debug.ALL) {
+                info("Objectÿve: Configuring...") ;
+                echo(opts) ;
+            }
+
+            if (!opts) return ;
+
             if (opts.silent != null) this.silent = !!opts.silent ;
 
             if (opts.debug != null) {
@@ -310,9 +371,9 @@ void function(jsCore) {
         // JavaScript version compatibility
         ECMAScript : ECMAScript,
 
-        // Debug level constants
+        // Debug level constants / Bêta
         debug : {
-            MINIMAL : 0,    // Minimal information
+            NONE : 0,    // No information
             MEDIUM : 1,     // ...
             ALL : 2         // ...
         },
@@ -387,7 +448,8 @@ void function(jsCore) {
             clone : clone,
             copy : copy,
             copySafe : copySafe,
-            list : list
+            list : list,
+            require : require
         },
 
         echo : echo,
@@ -479,26 +541,6 @@ void function(jsCore) {
                 return this ;
             },
 
-            module : function(fullname)
-            {
-                var tree = fullname.replace(/\./g, '/').split('/'),
-                    size = tree.length,
-                    _root = root ;
-                
-                for (var word, w=0, wl=size ; w<wl ; w++) {
-                    word = tree[w] ;
-
-                    if (_root[word] == null) _root[word] = {} ;
-                    else if (this.options().debug === Objectyve.debug.ALL)
-                        warn("Module root '"+fullname+"' has an already defined branch, it will be altered.") ;
-
-                    if (w < size-1) _root = _root[word] ;
-                    else _root[word] = this ;
-                }
-
-                return this ;
-            },
-
             extend : function(constructor)
             {
                 this.prototype = create(constructor.prototype) ;
@@ -520,16 +562,17 @@ void function(jsCore) {
                 for (var c=0, cl=args.length ; c<cl ; c++) {
                     constructor = args[c] ;
 
-                    if (is.funct(constructor))
+                    if (is.funct(constructor)) {
                         copy(this.prototype, constructor.prototype) ;
+
+                        if (constructor.__meta__ && constructor.__meta__.skeleton) {
+                            copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
+                            copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
+                        }
+                    }
                     else if (is.object(constructor))
                         copy(this.prototype, constructor) ;
                     else throw "Cannot mixin '"+constructor+"' with a prototype. Mixins require a function or an object." ;
-
-                    if (constructor.__meta__ && constructor.__meta__.skeleton) {
-                        copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
-                        copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
-                    }
                 }
 
                 return this ;
@@ -669,6 +712,42 @@ void function(jsCore) {
                 return this ;
             },
 
+            module : function(fullname)
+            {
+                if (!fullname) return this.__meta__.module ;
+
+                var tree = fullname.replace(/\./g, '/').split('/'),
+                    size = tree.length,
+                    _root = root ;
+                
+                for (var word, w=0, wl=size ; w<wl ; w++) {
+                    word = tree[w] ;
+
+                    if (_root[word] == null) _root[word] = {} ;
+                    else if (this.options().debug >= Objectyve.debug.ALL)
+                        warn("Module root '"+fullname+"' has an already defined branch, it will be altered.") ;
+
+                    if (w < size-1) _root = _root[word] ;
+                    else _root[word] = this ;
+                }
+
+                return this ;
+            },
+
+            define : function(path)
+            {
+                if (path === true) path = this.__meta__.module.replace(/\./g, '/') ;
+
+                if (plugins.amd) {
+                    if (path) root.define(path, bind(function() { return this ; }, this)) ;
+                    else root.define(bind(function() { return this ; }, this)) ;
+                }
+                else if (jsCore === 'server')
+                    module.exports = this ;
+
+                return this ;
+            },
+
             plug : function(name, instance)
             {
                 this.plugins()[name] = instance ;
@@ -679,49 +758,6 @@ void function(jsCore) {
             configure : function(opts)
             {
                 configure.call(this.options(), opts) ;
-
-                return this ;
-            },
-
-            define : function($1, $2, $3)
-            {
-                var context = root,
-                    plugins = this.plugins(),
-                    deps = [],
-                    callback = function() {} ;
-                if (is.array($1)) {
-                    deps = $1 ;
-                    if (is.funct($2)) callback = $2 ;
-                }
-                else if (is.object($1)) {
-                    context = $1 ;
-                    if (is.array($2)) {
-                        deps = $2 ;
-                        if (is.funct($3)) callback = $3 ;
-                    }
-                    else if (is.funct($2)) callback = $2 ;
-                }
-                else if (is.funct($1)) callback = $1 ;
-
-                if (plugins.requirejs) {
-                    var _this = this,
-                        def = typeof plugins.requirejs === 'function' ? plugins.requirejs : context.define ;
-                    def(deps, function() {
-                        callback.apply(_this, arguments) ;
-                        return _this ;
-                    }) ;
-                }
-                else if (jsCore === 'server') {
-                    var instances = [] ;
-                    for (var d=0, dl=deps.length ; d<dl ; d++)
-                        instances.push(require(deps[d])) ;
-                    callback.apply(this, instances) ;
-                    if (context !== root) context.exports = this ;
-                }
-                else if (this.options().debug >= Objectyve.debug.MINIMAL) {
-                    warn("Constructor definition function 'define()' called without effect.") ;
-                    callback.call(this) ;
-                }
 
                 return this ;
             },
@@ -830,14 +866,14 @@ void function(jsCore) {
             }
         },
         
-        Prototype : function(args) {
+        Prototype : function($1, $2) {
             var Prototype = function() {
                 return Objectyve.Instance.init.call(this, Prototype, arguments) ;
             } ;
             Prototype.__meta__ = {
                 skeleton : clone(Objectyve.Skeleton.modifiers),
-                options : clone(options),
-                plugins : clone(plugins)
+                options : create(options),
+                plugins : create(plugins)
             } ;
 
             switch (ECMAScript) {
@@ -849,16 +885,26 @@ void function(jsCore) {
                     break ;
                 case 4 :
                     copy(Prototype, Objectyve.Constructor) ;
-                    // Needs Prototype.updatePrototype() to be updated if new functions are added.
+                    // Needs `updatePrototype()` to be updated if new functions are added.
                     break ;
             }
 
-            if (is.object(args))
-                Prototype.set(args) ;
-            else if (is.funct(args))
-                args.call(Prototype, Prototype, bind(Prototype.set, Prototype)) ;
+            if (arguments.length === 2) {
+                require($1, function(deps) {
+                    if (is.object($2)) Prototype.set($2) ;
+                    else if (is.funct($2)) $2.call(Prototype, Prototype, bind(Prototype.set, Prototype), deps) ;
 
-            if (is.funct(Prototype.main)) Prototype.main.call(Prototype, Prototype) ;
+                    if (is.funct(Prototype.main)) Prototype.main.call(Prototype, Prototype) ;
+
+                    return Prototype ;
+                }) ;
+            }
+            else {
+                if (is.object($1)) Prototype.set($1) ;
+                else if (is.funct($1)) $1.call(Prototype, Prototype, bind(Prototype.set, Prototype)) ;
+
+                if (is.funct(Prototype.main)) Prototype.main.call(Prototype, Prototype) ;
+            }
             
             return Prototype ;
         }
