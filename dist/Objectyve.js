@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.7.3
- * @date        2014.11.16
+ * @version     0.7.5
+ * @date        2014.11.25
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             7,                      // Updates - Modifications
-            3,                      // Minor updates - Corrections
+            5,                      // Minor updates - Corrections
             new Date(
                 2014,               // Year \
                 11              -1, // Month >---- of last update
-                16                  // Day  /
+                25                  // Day  /
             )
         ],
 
@@ -139,7 +139,8 @@ void function(jsCore) {
             function() {
                 try { return Object.defineProperty.apply(arguments[0], arguments) ; }
                 catch (e) {
-                    if (options.debug >= Objectyve.debug.MEDIUM || options.strict >= Objectyve.strict.HIGH) warn(e) ;
+                    if (options.debug >= Objectyve.debug.MEDIUM || options.strict >= Objectyve.strict.HIGH)
+                        warn("ECMAScript compatibility issue : "+e) ;
                     return arguments[0] ;
                 }
             },
@@ -646,7 +647,7 @@ void function(jsCore) {
                 return this ;
             },
 
-            methods : function(properties)
+            method : function(properties)
             {
                 this.shared(properties) ;
 
