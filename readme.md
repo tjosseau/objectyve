@@ -13,7 +13,7 @@ Objectÿve is a light JavaScript framework to simplify your prototypes definitio
 
 # Examples
 
-Here is a "template" example of how it can look :
+Here is a "template" example:
 
 ```javascript
 var Dragon = Objectyve.Prototype
@@ -105,9 +105,9 @@ To build a new `Prototype`, just call the function as below :
 ```javascript
 var Abc = Objectyve.Prototype() ;
 ```
-> **Note :** Constructors are generally named with a capital letter first.
+> **Note :** Constructors generally have capitalized names.
 
-You can now instanciate multiple `Abc` objects the same way as commonly.
+You can now instanciate multiple `Abc` objects as normal.
 
 ```javascript
 var a = new Abc() ;
@@ -198,7 +198,7 @@ A.shared({
 
 ### hidden
 
-Hidden members are similar to _public_, thus publically accessible, but not enumerable from the instance.
+Hidden members are similar to _public_, thus publicly accessible, but not enumerable from the instance.
 
 ```javascript
 var A = Objectyve.Prototype() ;
@@ -271,7 +271,7 @@ This is exactly the same as writing `A.s = true`, but allows you to set multiple
 
 ### **Note** about _"private" shared/static_
 
-There is no modifier function to perform a `private shared` or `private static` property, because there is no need. Just write a `var` in a private scope such as here :
+There is no modifier function to perform a `private shared` or `private static` property, because there is no need. Just write a `var` in a private scope as seen here :
 
 ```javascript
 var A = (function() {
@@ -290,7 +290,7 @@ var A = (function() {
 
 ### nested
 
-Nested members are objects where each method inside refers the instance.
+Nested members are objects where each internal method refers to the instance.
 
 ```javascript
 var A = Objectyve.Prototype() ;
@@ -320,7 +320,7 @@ a.sub.getSubP() ; // 2
 
 This allows you to keep the `this` context into sub-objects so you can seperate properties into categories.
 
-> **Warning :** This feature uses `binding` process (but not `fn.bind()`), creating a function that will call the original one and setting a context to it. Avoid using nested properties for large amounts of instances.
+> **Warning :** This feature uses a `binding` process (but not `fn.bind()`), creating a function that will call the original one and setting a context to it. Avoid using nested properties for large amounts of instances.
 
 ----
 
@@ -467,7 +467,7 @@ Though `concealed` properties cannot be inherited.
 
 ### mixin / augment
 
-Besides inheritance, you can mixin a Prototype with multiple others. Though there is two different ways to perform a mixin.
+Beside inheritance, you can mix a Prototype in with multiple others. Though there are two different ways to perform a mixin.
 
 * Deep mixin
     
@@ -499,7 +499,7 @@ Besides inheritance, you can mixin a Prototype with multiple others. Though ther
 
 * Basic mixin
     
-    A basic mixin will copy all properties in the `constructor.prototype`, so only `shared` properties. This is the default way of mixin in JavaScript. To perform this, just give the `prototype` of the constructor as parameter :
+    A basic mixin will copy all properties in the `constructor.prototype`, so only `shared` properties. This is the default mixin way in JavaScript. To perform this, give the `prototype` of the constructor as parameter :
     ```javascript
     // [...]
     
@@ -513,7 +513,7 @@ Besides inheritance, you can mixin a Prototype with multiple others. Though ther
     b.h ; // undefined
     ```
     
-    You can also mixin with any object :
+    You can also mix in with any object :
     
     ```javascript
     var B = Objectyve.Prototype() ;
@@ -836,7 +836,7 @@ You can also get custom information about the version :
 >   Returns a whole version description.
 >   Example : _`Objectyve.version.toString()` returns **Objectÿve version 1.2.3 (build 102003) dated 2014.11.16 / ECMAScript 6 detected**._
 
-Those information can be useful if you need to know which version of the framework is used and if it is compatible with your application.
+This information can be useful if you need to know which version of the framework is used and if it is compatible with your application.
 
 #### configure
 
