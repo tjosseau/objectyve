@@ -33,7 +33,7 @@ var Dragon = Objectyve.Prototype
 
         count : function()
         {
-            return this.entities.length ; // Static property `entities` is inherited from Living.
+            return self.entities.length ; // Static property `entities` is inherited from Living.
         }
     },
 
@@ -57,7 +57,7 @@ var Dragon = Objectyve.Prototype
         {
             this.name = name || 'Dragon' ;
 
-            this.entities.push(this) ;
+            self.entities.push(this) ;
         },
 
         // walk: Augmented from Reptile.
@@ -945,6 +945,6 @@ Further documentation in this section coming soon !
 
 ## About
 
-**Objectÿve** is my first JavaScript library, started as personal project in 2012. It has known multiple deep changes and philosophy as I was learning more and more advanced JavaScript.
+**Objectÿve** is my first JavaScript library, started as a personal project in 2012. It has known multiple deep changes and philosophy as I was learning more and more advanced JavaScript.
 
 First I wanted to bring the classic object-oriented way of coding into JS, but then I realized it was a mistake. Classes, abstraction and privacy are not meant to be used in a prototypal language. However I think that some features and way-of-coding of that framework can bring a plus to the common way of making prototypes.

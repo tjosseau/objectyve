@@ -23,7 +23,7 @@ Objectyve.Prototype(function(self, definition)
 
             count : function()
             {
-                return this.entities.length ; // Static property `entities` is inherited from Living.
+                return self.entities.length ; // Static property `entities` is inherited from Living.
             }
         },
 
@@ -56,7 +56,7 @@ Objectyve.Prototype(function(self, definition)
         {
             this.name = name || 'Dragon' ;
 
-            this.entities.push(this) ;
+            self.entities.push(this) ;
         },
 
         method: // Does the same as 'shared', but can be clearer this way.
@@ -112,7 +112,7 @@ Dragon.describe = function()
 
 Dragon.count = function()
 {
-    return this.entities.length ;
+    return Dragon.entities.length ;
 } ;
 
 Dragon.prototype = Object.create(Living) ; // Conventional way, instead of using `new Living`.

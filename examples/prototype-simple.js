@@ -18,7 +18,7 @@ var Dragon = Objectyve.Prototype
 
         count : function()
         {
-            return this.entities.length ; // Static property `entities` is inherited from Living.
+            return Dragon.entities.length ; // Static property `entities` is inherited from Living.
         }
     },
 
@@ -89,7 +89,7 @@ Dragon.describe = function()
 
 Dragon.count = function()
 {
-    return this.entities.length ;
+    return Dragon.entities.length ;
 } ;
 
 Dragon.prototype = Object.create(Living) ; // Conventional way, instead of using `new Living`.
