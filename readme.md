@@ -33,7 +33,7 @@ var Dragon = Objectyve.Prototype
 
         count : function()
         {
-            return self.entities.length ; // Static property `entities` is inherited from Living.
+            return Dragon.entities.length ; // Static property `entities` is inherited from Living.
         }
     },
 
@@ -57,7 +57,7 @@ var Dragon = Objectyve.Prototype
         {
             this.name = name || 'Dragon' ;
 
-            self.entities.push(this) ;
+            Dragon.entities.push(this) ;
         },
 
         // walk: Augmented from Reptile.
