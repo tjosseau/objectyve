@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.7.5
- * @date        2014.11.25
+ * @version     0.7.6
+ * @date        2015.03.11
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             7,                      // Updates - Modifications
-            5,                      // Minor updates - Corrections
+            6,                      // Minor updates - Corrections
             new Date(
-                2014,               // Year \
-                11              -1, // Month >---- of last update
-                25                  // Day  /
+                2015,               // Year \
+                3               -1, // Month >---- of last update
+                11                  // Day  /
             )
         ],
 
@@ -286,7 +286,7 @@ void function(jsCore) {
             return array ;
         },
 
-        require = function(deps, fn)
+        defineModule = function(deps, fn)
         {
             var d,
                 i,
@@ -308,10 +308,8 @@ void function(jsCore) {
                 echo(dependencies) ;
             }
 
-            if (!dependencies.length) return fn(objDeps) ;
-
             if (plugins.amd) {
-                root.require(dependencies, function() {
+                root.define(dependencies, function() {
                     i = 0 ;
                     for (d in deps) {
                         objDeps[d] = arguments[i] ;
@@ -891,7 +889,7 @@ void function(jsCore) {
             }
 
             if (arguments.length === 2) {
-                require($1, function(deps) {
+                defineModule($1, function(deps) {
                     if (is.object($2)) Prototype.set($2) ;
                     else if (is.funct($2)) $2.call(Prototype, Prototype, bind(Prototype.set, Prototype), deps) ;
 

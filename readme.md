@@ -430,7 +430,7 @@ Though `concealed` properties cannot be inherited.
     ```javascript
     var ParentOfB = B.parent ;
     // or
-    var pb = new B.parent() ;
+    var pb = (new B).parent() ;
     ```
 
 * You can also quickly access the parent prototype with the `super` static property.
