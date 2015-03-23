@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.7.6
- * @date        2015.03.11
+ * @version     0.7.7
+ * @date        2015.03.23
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -47,11 +47,11 @@ void function(jsCore) {
     var VERSION = [
             0,                      // Core version
             7,                      // Updates - Modifications
-            6,                      // Minor updates - Corrections
+            7,                      // Minor updates - Corrections
             new Date(
                 2015,               // Year \
                 3               -1, // Month >---- of last update
-                11                  // Day  /
+                23                  // Day  /
             )
         ],
 
@@ -448,7 +448,7 @@ void function(jsCore) {
             copy : copy,
             copySafe : copySafe,
             list : list,
-            require : require
+            defineModule : defineModule
         },
 
         echo : echo,
