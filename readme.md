@@ -11,16 +11,16 @@ Objectÿve is a light JavaScript framework to simplify your prototypes definitio
 
 ----
 
-# Examples
+# Samples
 
-Here is a "template" example:
+Here is a "template" sample :
 
 ```javascript
 var Dragon = Objectyve.Prototype
 ({
-    extend: Living,                 // Can only extend one constructor.
+    extend: Living,                 // Can only extend one Prototype.
 
-    mixin: [Reptile, Wingged],      // Can be augmented with one or more constructors.
+    mixin: [Reptile, Wingged],      // Can be augmented with one or more Prototypes.
 
     static:
     {
@@ -97,7 +97,7 @@ To have an overview of how it may be used, I suggest you to take a look at those
 > **Definition:** "Prototype-based programming is a style of object-oriented programming in which behaviour reuse (known as inheritance) is performed via a process of cloning existing objects that serve as prototypes."
 > http://en.wikipedia.org/wiki/Prototype-based_programming
 
-In **Objectÿve**, a `Prototype` is a prototype-based constructor which will instanciate objects the same way as by default in JavaScript.
+In **Objectÿve**, a `Prototype` is a prototype-based factory function which will instanciate objects - respecting JavaScript's way of doing.
 
 ### Creating a new Prototype
 
@@ -105,14 +105,18 @@ To build a new `Prototype`, just call the function as below :
 ```javascript
 var Abc = Objectyve.Prototype() ;
 ```
-> **Note :** Constructors generally have capitalized names.
+> **Note :** Constructors generally have capitalized names, but it is not an obligation.
 
 You can now instanciate multiple `Abc` objects as normal.
 
 ```javascript
+// Classical way of instanciation
 var a = new Abc() ;
-// or
+
+// Alternative way of instanciation
 var a = Abc.create() ; // See section 'Initializing > create'
+// nearly same as
+var a = Object.create(Abc.prototype) ;
 ```
 
 ----
@@ -141,7 +145,7 @@ a.d ; // undefined
 
 ### shared / method
 
-Shared members are attributes and methods set in the `prototype` of the constructor. This means that every object will inherit from/share that prototype.
+Shared members are attributes and methods set in the `prototype` of the factory. This means that every object will inherit from/share that prototype.
 ```javascript
 var A = Objectyve.Prototype() ;
 A.shared({
@@ -276,21 +280,21 @@ There is no modifier function to perform a `private shared` or `private static` 
 ```javascript
 var A = (function() {
     var privateVar = 123,
-        constructor = Objectyve.Prototype() ;
+        factory = Objectyve.Prototype() ;
     
-    constructor.method({
+    factory.method({
         getVar : function() {
             return privateVar ;
         }
     }) ;
     
-    return constructor ;
+    return factory ;
 })() ;
 ```
 
 ### nested
 
-Nested members are objects where each internal method refers to the instance.
+Nested members are objects where each internal method will refer to the instance.
 
 ```javascript
 var A = Objectyve.Prototype() ;
@@ -339,7 +343,7 @@ A.method({
 }) ;
 ```
 
-You can also call the `initialize` function...
+You can also call the `initialize` function to define it...
 
 ```javascript
 var A = Objectyve.Prototype() ;
@@ -367,7 +371,7 @@ A.constructor(function() {
 
 ### main
 
-The `main` method is called a "static constructor", meaning a function called once the constructor is ready to use.
+The `main` method is called once the factory is ready to use.
 
 ```javascript
 var A = Objectyve.Prototype({
@@ -380,11 +384,11 @@ var A = Objectyve.Prototype({
 }) ; // 1
 ```
 
-This is the same as setting a `constructor` method in a static class in Java.
+This is the same as setting a `static constructor` method in Java.
 
 ### create
 
-The `create` function is another way to create a new instance of a constructor.
+The `create` function is another way to create new instances.
 
 ```javascript
 var A = Objectyve.Prototype() ;
@@ -394,7 +398,7 @@ var a = A.create() ;
 a = new A() ;
 ```
 
-This allows you to avoid using `new A` which for some reason looks against JavaScript's philosophy as it looks like a class-based way of instanciating.
+This allows you to avoid using `new A` which for some reason looks against JavaScript's philosophy. See here why : http://ericleads.com/2012/09/stop-using-constructor-functions-in-javascript/
 
 ----
 
@@ -402,7 +406,7 @@ This allows you to avoid using `new A` which for some reason looks against JavaS
 
 ### extend
 
-You are able to extend a Prototype with another, and only one, this way :
+You are able to extend a `Prototype` with another, and only one, this way :
 
 ```javascript
 var A = Objectyve.Prototype({
@@ -426,11 +430,9 @@ Though `concealed` properties cannot be inherited.
 
 #### Parent accessors
 
-* You can access the parent constructor with the `parent` static property.
+* You can access the parent factory with the `parent` static property.
     ```javascript
     var ParentOfB = B.parent ;
-    // or
-    var pb = (new B).parent() ;
     ```
 
 * You can also quickly access the parent prototype with the `super` static property.
@@ -453,7 +455,6 @@ Though `concealed` properties cannot be inherited.
         A.prototype.initialize.apply(this, arguments) ;
     }) ;
     ```
-    This equals to `super()` in Java.
 
     And finally, you can also call the parent's methods to apply on the instance.
     ```javascript
@@ -464,14 +465,13 @@ Though `concealed` properties cannot be inherited.
     }) ;
     ```
 
-
 ### mixin / augment
 
-Beside inheritance, you can mix a Prototype in with multiple others. Though there are two different ways to perform a mixin.
+Beside inheritance, you can mix a `Prototype` in with multiple others. Though there are two different ways to perform a mixin.
 
 * Deep mixin
     
-    A deep mixin will copy all `shared`, `public` and `hidden` members. To perform this, just give the constructor as parameter :
+    A deep mixin will copy all `shared`, `public` and `hidden` members. To perform this, just give the constructor/factory as parameter :
     ```javascript
     var A = Objectyve.Prototype({
         public : {
@@ -499,7 +499,7 @@ Beside inheritance, you can mix a Prototype in with multiple others. Though ther
 
 * Basic mixin
     
-    A basic mixin will copy all properties in the `constructor.prototype`, so only `shared` properties. This is the default mixin way in JavaScript. To perform this, give the `prototype` of the constructor as parameter :
+    A basic mixin will copy all properties in the `constructor.prototype`, so only `shared` properties. This is the default way in JavaScript. To perform this, give the `prototype` of the factory as parameter :
     ```javascript
     // [...]
     
@@ -529,7 +529,7 @@ Beside inheritance, you can mix a Prototype in with multiple others. Though ther
 ### module
 
 This is the first method for defining modules manually **without using AMD** dependency system.
-This function will generate the "tree package" in the global scope to access the constructor.
+This function will generate the "tree package" in the global scope to access the Prototype.
 
 ```javascript
 (function() {
@@ -739,13 +739,13 @@ console.log(A.plugins()) ; // Object, see section 'Configuration > plug'
 
 ### updatePrototype
 
-For old browsers such as _Internet Explorer 8_ (under ECMAScript 4), if you alter the default Prototype constructor's prototype (where all the API methods are), you'll have to update every Prototype you've created in order to get the new functions.
+For old browsers such as _Internet Explorer 8_ (under ECMAScript 4), if you alter the default Prototype Factory's prototype (where all the API methods are), you'll have to update every Prototype you've created in order to get the new functions.
 
 ```javascript
 var A = Objectyve.Prototype() ;
 
 // Adding new 'private()' modifier function
-Objectyve.Constructor.private = function(props) { ... } ;
+Objectyve.Factory.private = function(props) { ... } ;
 
 A.private({
     p : 1
