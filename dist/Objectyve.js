@@ -3,12 +3,12 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.7.7
- * @date        2015.03.23
+ * @version     0.8.1
+ * @date        2015.06.28
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
- *      JavaScript framework as a light but extended prototype factory.
+ *      Prototype Factory framework in JavaScript.
  */
 
 void function(jsCore) {
@@ -122,8 +122,8 @@ void function(jsCore) {
         create = ECMAScript > 4 ?
             Object.create :
             (function() {
-                var F = function() {} ;
                 return function(p) {
+                    function F() {}
                     F.prototype = p ;
                     return new F() ;
                 } ;
@@ -148,6 +148,7 @@ void function(jsCore) {
         // Reference to `Function.prototype.bind()`
             // @param fn <function> : Function to bind
             // @param context <object> : Object context
+            // @return <function> : Binded function
         bind = ECMAScript > 4 ?
             function(fn, context) {
                 return fn.bind(context) ;
@@ -157,6 +158,28 @@ void function(jsCore) {
                     return fn.apply(context, arguments) ;
                 } ;
             },
+
+        // Reference to `Object.setPrototypeOf()`
+            // @param object <object> : Object to alter prototype
+            // @param prototype <object> : Prototype object
+            // @return <object> : Given object
+        setPrototypeOf =
+            ECMAScript >= 6 ?
+            function(object, prototype) {
+                Object.setPrototypeOf(object, prototype) ;
+                return object ;
+            } :
+            ECMAScript == 5 ?
+            function(object, prototype) {
+                object.__proto__ = prototype ;
+                return object ;
+            } :
+            function(object, prototype) {
+                for (var p in prototype)
+                    if (prototype.propertyIsEnumerable(p))
+                        object[p] = prototype[p] ;
+                return object ;
+            } ;
 
     // Utilities //
 
@@ -284,6 +307,19 @@ void function(jsCore) {
                     array.push(arguments[a]) ;
             }
             return array ;
+        },
+
+        // Creates an instance from a given constructor with given arguments.
+            // @param constructor <function> : Constructor function
+            // @param args <object|array> : Arguments object
+            // @return <object> : Created instance
+        createWith = function(constructor, args)
+        {
+            function F() {
+                return constructor.apply(this, args) ;
+            }
+            F.prototype = constructor.prototype ;
+            return new F ;
         },
 
         defineModule = function(deps, fn)
@@ -457,7 +493,7 @@ void function(jsCore) {
     // Engines ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Skeleton structure
-            // Stored in the Prototype constructor function.
+            // Stored in the Prototype Factory function.
             // Allows to perform property manipulations such as hidden or nested.
         Skeleton : {
             // Default object to clone for each Prototype.
@@ -471,27 +507,30 @@ void function(jsCore) {
             },
 
             // Sets the member's modifier as activated.
-                // @param constructor <function> : Constructor to alter
+                // @param factory <function> : Factory to alter
                 // @param member <string> : Name of property
                 // @param modifier <string> : Name of modifier
-            set : function(constructor, member, modifier)
+            set : function(factory, member, modifier)
             {
-                constructor.__meta__.skeleton[modifier][member] = true ;
+                factory.__meta__.skeleton[modifier][member] = true ;
             },
 
             // Removes all the member's modifiers.
-                // @param constructor <function> : Constructor to alter
+                // @param factory <function> : Factory to alter
                 // @param member <string> : Name of property
-            unset : function(constructor, member)
+            unset : function(factory, member)
             {
-                var meta = constructor.__meta__ ;
+                var meta = factory.__meta__ ;
                 for (var m in meta.skeleton)
                     if (meta.skeleton[m][member])
                         delete meta.skeleton[m][member] ;
             }
         },
         
-        Constructor : {
+        // Factory structure
+            // Given to all Factory functions' prototypes.
+            // Includes various methods to manipulate Factories and their prototypes.
+        Factory : setPrototypeOf({
         // Getters //
             
             metadata : function()
@@ -543,7 +582,7 @@ void function(jsCore) {
             extend : function(constructor)
             {
                 this.prototype = create(constructor.prototype) ;
-                if (constructor.__meta__ && constructor.__meta__.skeleton) {
+                if (constructor.__meta__ && constructor.__meta__.skeleton) { // If it is a Factory
                     copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
                     copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                 }
@@ -564,7 +603,7 @@ void function(jsCore) {
                     if (is.funct(constructor)) {
                         copy(this.prototype, constructor.prototype) ;
 
-                        if (constructor.__meta__ && constructor.__meta__.skeleton) {
+                        if (constructor.__meta__ && constructor.__meta__.skeleton) { // If it is a Factory
                             copy(this.__meta__.skeleton.public, constructor.__meta__.skeleton.public) ;
                             copy(this.__meta__.skeleton.hidden, constructor.__meta__.skeleton.hidden) ;
                         }
@@ -761,21 +800,21 @@ void function(jsCore) {
                 return this ;
             },
                 
-            // Updates Constructor prototype for old browsers.
+            // Updates Factory prototype for old browsers.
             updatePrototype : function()
             {
-                if (ECMAScript < 5) copy(this, Objectyve.Constructor) ;
+                if (ECMAScript < 5) copy(this, Objectyve.Factory) ;
 
                 return this ;
             }
-        },
+        }, Function.prototype), // Inherits function's prototype, useful for `call` and `apply`.
 
         Instance : {
             perform : {
                 ORDER : ['prototype', 'nested'],
                 add : function(name, fn, position) {
                     if (name === 'ORDER' || name === 'add')
-                        throw "Constructor perform function name '"+name+"' is reserved." ;
+                        throw "Factory perform function name '"+name+"' is reserved." ;
                     this[name] = fn ;
 
                     var length = this.ORDER.length,
@@ -803,18 +842,18 @@ void function(jsCore) {
 
                 //////////////////////////////////////////////////////////////
 
-                prototype : function(constructor) {
+                prototype : function(factory) {
                     var property ;
 
-                    for (var p in constructor.prototype) {
+                    for (var p in factory.prototype) {
                         // ! \\ Prototype object properties must not be filtered by 'isEnumerable'.
-                        property = constructor.prototype[p] ;
+                        property = factory.prototype[p] ;
                         if (is.funct(property)) continue ;
 
-                        if (constructor.__meta__.skeleton.public[p]) {
+                        if (factory.__meta__.skeleton.public[p]) {
                             this[p] = clone(property) ;
                         }
-                        else if (constructor.__meta__.skeleton.hidden[p]) {
+                        else if (factory.__meta__.skeleton.hidden[p]) {
                             this[p] = clone(property) ;
                             defineProperty(this, p, {
                                 enumerable : false,
@@ -823,8 +862,8 @@ void function(jsCore) {
                         }
                     }
 
-                    for (var pp in constructor.__meta__.skeleton.concealed) {
-                        property = constructor.prototype[pp] ;
+                    for (var pp in factory.__meta__.skeleton.concealed) {
+                        property = factory.prototype[pp] ;
                         if (is.funct(property)) continue ;
 
                         this[pp] = clone(property) ;
@@ -835,12 +874,12 @@ void function(jsCore) {
                     }
                 },
 
-                nested : function(constructor) {
+                nested : function(factory) {
                     var property ;
-                    for (var cl in constructor.__meta__.skeleton.nested) {
+                    for (var cl in factory.__meta__.skeleton.nested) {
                         if (!is.object(this[cl])) this[cl] = {} ;
-                        for (var clp in constructor.__meta__.skeleton.nested[cl]) {
-                            property = constructor.__meta__.skeleton.nested[cl][clp] ;
+                        for (var clp in factory.__meta__.skeleton.nested[cl]) {
+                            property = factory.__meta__.skeleton.nested[cl][clp] ;
 
                             if (is.funct(property)) this[cl][clp] = bind(property, this) ;
                             else this[cl][clp] = clone(property) ;
@@ -849,16 +888,16 @@ void function(jsCore) {
                 }
             },
 
-            init : function(constructor, args)
+            init : function(factory, args)
             {
                 if (this.initialize === false)
                     throw "Prototype is static and cannot be instanciated." ;
 
                 var performs = Objectyve.Instance.perform ;
                 for (var p=0, pl=performs.ORDER.length ; p<pl ; p++)
-                    performs[performs.ORDER[p]].call(this, constructor) ;
+                    performs[performs.ORDER[p]].call(this, factory) ;
                 
-                if (constructor.__meta__.skeleton.public.initialize === true)
+                if (factory.__meta__.skeleton.public.initialize === true)
                     return this.initialize.apply(this, args) ;
 
                 return this ;
@@ -867,6 +906,7 @@ void function(jsCore) {
         
         Prototype : function($1, $2) {
             var Prototype = function() {
+                if (this === root) return createWith(Prototype, arguments) ;
                 return Objectyve.Instance.init.call(this, Prototype, arguments) ;
             } ;
             Prototype.__meta__ = {
@@ -875,18 +915,7 @@ void function(jsCore) {
                 plugins : create(plugins)
             } ;
 
-            switch (ECMAScript) {
-                case 6 :
-                    Object.setPrototypeOf(Prototype, Objectyve.Constructor) ;
-                    break ;
-                case 5 :
-                    Prototype.__proto__ = Objectyve.Constructor ;
-                    break ;
-                case 4 :
-                    copy(Prototype, Objectyve.Constructor) ;
-                    // Needs `updatePrototype()` to be updated if new functions are added.
-                    break ;
-            }
+            setPrototypeOf(Prototype, Objectyve.Factory) ;
 
             if (arguments.length === 2) {
                 defineModule($1, function(deps) {

@@ -1,6 +1,6 @@
 
 // This is an example of a default prototype definition.
-// Though, spaces and indentation are meaningful.
+// Though, newlines, spaces and indentation are meaningful.
 
 Objectyve.Prototype(function(self, definition)
 {
@@ -38,7 +38,7 @@ Objectyve.Prototype(function(self, definition)
             name : '',
 
             strength : 3,
-            speed : 2
+            speed : 2,
 
             // Objects given as public are automatically deeply cloned.
             // If you don't want to clone it, use 'shared' modifier instead.
