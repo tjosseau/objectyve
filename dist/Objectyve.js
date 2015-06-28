@@ -46,12 +46,12 @@ void function(jsCore) {
             // Accessible with `Objectyve.version()`
     var VERSION = [
             0,                      // Core version
-            7,                      // Updates - Modifications
-            7,                      // Minor updates - Corrections
+            8,                      // Updates - Modifications
+            1,                      // Minor updates - Corrections
             new Date(
                 2015,               // Year \
-                3               -1, // Month >---- of last update
-                23                  // Day  /
+                6               -1, // Month >---- of last update
+                28                  // Day  /
             )
         ],
 
