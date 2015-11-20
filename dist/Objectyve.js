@@ -3,8 +3,8 @@
  * Objectÿve framework bêta
  *
  * @author      Thomas Josseau
- * @version     0.8.1
- * @date        2015.06.28
+ * @version     0.8.2
+ * @date        2015.11.20
  * @link        https://github.com/tjosseau/objectyve
  *
  * @description
@@ -118,14 +118,22 @@ void function(jsCore) {
 
         // Reference to `Object.create()`
             // @param prototype <object> : Object as prototype of new instance
+            // @param properties <object> : Properties to set to the new instance
             // @return <object> : New instance created
         create = ECMAScript > 4 ?
             Object.create :
             (function() {
-                return function(p) {
+                return function(proto, props) {
+                    var f, p ;
                     function F() {}
-                    F.prototype = p ;
-                    return new F() ;
+                    F.prototype = proto ;
+
+                    f = new F ;
+                    for (p in props)
+                        if (props.propertyIsEnumerable(p))
+                            f[p] = props[p] ;
+
+                    return f ;
                 } ;
             })(),
     
@@ -179,7 +187,7 @@ void function(jsCore) {
                     if (prototype.propertyIsEnumerable(p))
                         object[p] = prototype[p] ;
                 return object ;
-            } ;
+            },
 
     // Utilities //
 
@@ -548,10 +556,9 @@ void function(jsCore) {
                 return this.__meta__.plugins ;
             },
 
-            create : function()
+            create : function(properties)
             {
-                var instance = create(this.prototype) ;
-                return Objectyve.Instance.init.call(instance, this, arguments) ;
+                return create(this.prototype, properties) ;
             },
 
         // Setters //
